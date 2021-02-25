@@ -38,7 +38,7 @@ int main(){
 	}
 
 
-	// free all datastructs
+	// free all data structs
 	BN_CTX_free(ctx);
 	BN_free(p);
 	BN_GENCB_free(cb);
