@@ -1,6 +1,8 @@
 #include <openssl/bn.h>
 #include <openssl/rand.h>
+#include <string.h>
 #include "primes.h"
+#include "nss_pga.h"
 
 /* 
 function: generates prime with nss method, passed on into bignum p
@@ -96,8 +98,7 @@ int nss_iter(BIGNUM *p, int k, int r, int t){
 
 
 
-	unsigned long *it; // is passed on as an iterator variable inside nss_sieve to do the sieve checking. 
-	*it = 0;
+	unsigned long it = 0; // is passed on as an iterator variable inside nss_sieve to do the sieve checking. 
 
 	do{
 		ret = nss_sieve(sieve, sieve_sz, n, n0, r, &it);
@@ -110,7 +111,7 @@ int nss_iter(BIGNUM *p, int k, int r, int t){
 		}
 
 
-	}while(ret != 0 && !bn_is_prime_int(n, t, ctx, 0, NULL)); // signature: bn_is_prime_int(const BIGNUM *w, int checks, BN_CTX *ctx, int do_trial_division, BN_GENCB *cb);
+	}while(ret != 0 && !bn_is_prime_fasttest_ex(n, t, ctx, 0, NULL)); // signature: int BN_is_prime_fasttest_ex(const BIGNUM *p, int nchecks, BN_CTX *ctx, int do_trial_division, BN_GENCB *cb);
 
 
 	if(ret == 1){
