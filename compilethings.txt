@@ -1,0 +1,2 @@
+gcc -std=gnu99 -I/usr/compilelibs/openssl/include -L/usr/compilelibs/openssl/lib -Wl,-rpath=/usr/compilelibs/openssl/lib nss_test.c nss_pga.c -lcrypto -o executabletest
+
