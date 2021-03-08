@@ -17,8 +17,8 @@ int nss_pga(BIGNUM *p, int k, int t, int u, int r, int l){
 		return -1;
 	}
 
-	if(r <= 0 && 2048 <= r){
-		printf("r must lie between 0 and 2048");
+	if(r <= 0 || 8192 < r){
+		printf("r must lie between 0 and 8192");
 		return -1;
 	}
 
