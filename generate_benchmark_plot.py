@@ -15,7 +15,7 @@ plt.ylabel('Runtime [s]')
 plt.title('Runtime for 512 generated primes');
 
 for i in range(0,5):
-	plt.plot(l[i*5:((i*5)+4)],time[i*5:((i*5)+4)], linestyle[i])
+	plt.plot(l[i*5:((i*5)+5)],time[i*5:((i*5)+5)], linestyle[i])
 
 plt.legend( [ 'r = 512'
             , 'r = 1024'  
