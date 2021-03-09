@@ -24,5 +24,5 @@ plt.legend( [ 'r = 512'
             , 'r = 8192' 
             ] )
 
-plt.savefig("plots/nss_analysis_pic.png")
+plt.savefig("plots/nss_analysis_final.png")
 
