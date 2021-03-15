@@ -60,7 +60,7 @@ int nss_iter(BIGNUM *p, int k, int r, int t, int l){
 	// generate k-bit, odd number, aka trial value
 	BIGNUM *n0;
 	n0 = BN_new();
-	BN_rand(n0, k, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ODD); // question: Do top bits have to be 1 for valid k bit prime output?
+	BN_rand(n0, k, BN_RAND_TOP_TWO, BN_RAND_BOTTOM_ODD); // question: Do top bits have to be 1 for valid k bit prime output?
 
 	// p is going to copy from this var on success
 	BIGNUM *n;

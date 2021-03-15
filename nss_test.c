@@ -9,14 +9,17 @@ int main(){
 	BN_CTX *ctx;
 	ctx = BN_CTX_new();
 
-	int l = 0x128; // 0x8000 = 2^15
+	// security param at k=1024 => g = 80, u*l >= g*ln^2(2)*k ~ 39360
+	int l = 0x8000; // 0x8000 = 2^15 = 32768
+	int u = 2;
+	int t = 5; 
 
-	for(int i=0; i<200; i++){
+	for(int i=0; i<1000000; i++){
 		//int nss_pga(BIGNUM *p, int k, int t, int u, int r, int l);
-		int returncode = nss_pga(p, 1024, 5, 10, 512, l);
+		int returncode = nss_pga(p, 1024, t, u, 512, l);
 
 		// test for primality
-		if(returncode==1 && !BN_check_prime(p, ctx, NULL)){
+		if(!BN_check_prime(p, ctx, NULL)){
 			printf("[!] Fail\n");
 			return -1;
 		}
