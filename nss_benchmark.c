@@ -16,7 +16,7 @@ int main(int argc, char **argv){
 
 	int l = 4000; // max deviation
 
-	int r = argv[1]; // get r from program argument
+	int r = atoi(argv[1]); // get r from program argument
 
 	int l_inc = 512;
 
