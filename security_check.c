@@ -1,7 +1,5 @@
 #include <math.c>
 
-
-
 int security_check(int k, int t, int r, int u){
     int security_param = 80;
 

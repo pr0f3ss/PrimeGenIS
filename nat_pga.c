@@ -49,6 +49,7 @@ int nat_pga(BIGNUM *p, int k, int t, int r, int l){
         BN_add(n, n, two_bn); // n = n+2
         
         //int nat_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int r, unsigned long *it)
+        // ret = sieve(); 
 
         // check bit length of returned n
         if(BN_num_bits(n) != k){
