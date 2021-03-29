@@ -1,2 +1,2 @@
-gcc -std=gnu99 -I/usr/compilelibs/openssl/include -L/usr/compilelibs/openssl/lib -Wl,-rpath=/usr/compilelibs/openssl/lib nat_test.c nss_pga.c nat_pga.c -lcrypto -o executabletest -O3
+gcc -std=gnu99 -I/usr/compilelibs/openssl/include -L/usr/compilelibs/openssl/lib -Wl,-rpath=/usr/compilelibs/openssl/lib dirichlet_sieve.c nat_pga.c nat_test.c -lcrypto -o executabletest -O3
 

@@ -9,14 +9,14 @@ function: generates prime with openssl algorithm, passed on into bignum p
 arguments: p = probable prime if successful, k = bit size of prime, t = # MR rounds, r = number of primes to do trial division with, l = max deviation from output prime to trial 
 returns: 1 if successful, 0 if general error
 */
-int openssl_pga(BIGNUM *p, int k, int t, int r, int l){
+int openssl_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(unsigned char*, int, BIGNUM*, int), int (*sieve_algo)(unsigned char*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
     int ret = -1;
     
     BIGNUM *n;
 	n = BN_new();
 
     while(ret==-1){
-        ret = openssl_iter(n, k, r, t, l);
+        ret = openssl_iter(n, k, r, t, l, generate_sieve, sieve_algo);
     }
 
     if(ret == 1){
@@ -35,7 +35,7 @@ arguments: p = returned prime if successfully generated, k = bit size of prime, 
 returns: 1 if successful, 0 if sieve generation failed, -1 if failure in creating prime 
 other:  l = max deviation from initially generated num and probable prime 
 */
-int openssl_iter(BIGNUM *p, int k, int r, int t, int l){
+int openssl_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsigned char*, int, BIGNUM*, int), int (*sieve_algo)(unsigned char*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
 
     int ret = -1;
 
@@ -59,7 +59,7 @@ int openssl_iter(BIGNUM *p, int k, int r, int t, int l){
 
 	sieve = (unsigned char*) malloc(sieve_sz); 
 
-    if(!openssl_generate_sieve(sieve, sieve_sz, n0, r)){
+    if(!generate_sieve(sieve, sieve_sz, n0, r)){
         return -1;
     }
 
@@ -67,7 +67,7 @@ int openssl_iter(BIGNUM *p, int k, int r, int t, int l){
 
     unsigned long it = 0; // is passed on as an iterator variable inside openssl_sieve to do the sieve checking. 
 
-	ret = openssl_sieve(sieve, sieve_sz, n, n0, r, &it, k);
+	ret = sieve_algo(sieve, sieve_sz, n, n0, r, &it, k);
     
     // check return value of openssl_sieve & for bit length of returned n
     if(ret != 1 || BN_num_bits(n) != k){

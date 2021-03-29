@@ -3,7 +3,6 @@
 #include <string.h>
 #include "primes.h"
 #include "nat_pga.h"
-#include "nss_pga.h"
 
 /* 
 function: generates prime with natural algorithm, passed on into bignum p
@@ -11,8 +10,9 @@ arguments: p = probable prime if successful, k = bit size of prime, t = # MR rou
 returns: 1 if successful, 0 if failure, -1 if error
 */
 
-int nat_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(unsigned char*, int, BIGNUM, int), int (*sieve_algo)(unsigned char*, int, BIGNUM, BIGNUM, int, unsigned long*, int)){
+int nat_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(unsigned char*, int, BIGNUM*, int), int (*sieve_algo)(unsigned char*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
     int ret = -1;
+
 
     // create buffer for internal computations
 	BN_CTX *ctx;
@@ -41,7 +41,7 @@ int nat_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(unsigne
 
     ret = sieve_algo(sieve, sieve_sz, n, n0, r, &it, k);
     /* SIEVE */
-    
+
     // check for bit length of returned n
     if(ret != 1 || BN_num_bits(n) != k){
 
@@ -53,24 +53,16 @@ int nat_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(unsigne
         return ret;
     }
 
-    // holds value '2', used to increment n in loop
-    BIGNUM *two_bn;
-	two_bn = BN_new();
-    unsigned long two_ul = 2;
-    BN_set_word(two_bn, two_ul);
-
     // pre-condition: n is odd, k-bit long
     while(!BN_is_prime_fasttest_ex(n, t, ctx, 0, NULL)){
-        BN_add(n, n, two_bn); // n = n+2
         
         //int nat_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int r, unsigned long *it)
-        ret = nss_sieve(sieve, sieve_sz, n, n0, r, &it);
-
+        ret = sieve_algo(sieve, sieve_sz, n, n0, r, &it, k);
+        
         // check bit length of returned n
         if(ret!= 1 || BN_num_bits(n) != k){
             BN_free(n0);
             BN_free(n);
-            BN_free(two_bn);
             BN_CTX_free(ctx);
             free(sieve);
             return ret;
@@ -83,7 +75,6 @@ int nat_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(unsigne
 
     BN_free(n0);
 	BN_free(n);
-    BN_free(two_bn);
     BN_CTX_free(ctx);
 
 	return ret;

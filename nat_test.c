@@ -1,5 +1,7 @@
 #include <openssl/bn.h>
 #include "nat_pga.h"
+#include "dirichlet_sieve.h"
+#include "nss_pga.h"
 
 int main(){
 
@@ -14,7 +16,7 @@ int main(){
 
 	for(int i=0; i<1000; i++){
 		//int nat_pga(BIGNUM *p, int k, int t, int r, int l);
-		int returncode = nat_pga(p, 1024, t, 1024, l);
+		int returncode = nat_pga(p, 2048, t, 200, l, dirichlet_generate_sieve, dirichlet_sieve);
 		printf("returncode: %d\n", returncode);
 		// test for primality
 		if(!BN_check_prime(p, ctx, NULL)){

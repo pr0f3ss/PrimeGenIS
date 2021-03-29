@@ -10,7 +10,7 @@ arguments: p = probable prime if successful, k = bit size of prime, t = # MR rou
 returns: 1 if successful, 0 if failure, -1 if error
 */
 
-int nss_pga(BIGNUM *p, int k, int t, int u, int r, int l){
+int nss_pga(BIGNUM *p, int k, int t, int u, int r, int l, int (*generate_sieve)(unsigned char*, int, BIGNUM*, int), int (*sieve_algo)(unsigned char*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
 
 	if(k<=0 || u<=0){
 		printf("k and u must be >0");
@@ -30,7 +30,7 @@ int nss_pga(BIGNUM *p, int k, int t, int u, int r, int l){
 
 	// tries at most u nss_iter steps
 	while(ret != 1 && j < u){
-		ret = nss_iter(n, k, r, t, l);
+		ret = nss_iter(n, k, r, t, l, generate_sieve, sieve_algo);
 		j+=1;
 	}
 
@@ -51,7 +51,7 @@ returns: 1 if successful, 0 if failure, -1 if error (sieve generation)
 other:  l = max deviation from initially generated num and probable prime 
 */
 
-int nss_iter(BIGNUM *p, int k, int r, int t, int l){
+int nss_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsigned char*, int, BIGNUM*, int), int (*sieve_algo)(unsigned char*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
 
 	// create buffer for internal computations
 	BN_CTX *ctx;
@@ -82,7 +82,7 @@ int nss_iter(BIGNUM *p, int k, int r, int t, int l){
 	sieve = (unsigned char*) malloc(sieve_sz); 
 
 	// generate sieve for nss_sieve method
-	int returncode_sievegen = nss_generate_sieve(sieve, sieve_sz, n0, r);
+	int returncode_sievegen = generate_sieve(sieve, sieve_sz, n0, r);
 	if(returncode_sievegen != 1){
 
 		// todo: figure out how to skip do while loop if sieve generation fails (to free all buffers correctly) without having to repeat code
@@ -106,7 +106,7 @@ int nss_iter(BIGNUM *p, int k, int r, int t, int l){
 	unsigned long it = 0; // is passed on as an iterator variable inside nss_sieve to do the sieve checking. 
 
 	do{
-		ret = nss_sieve(sieve, sieve_sz, n, n0, r, &it, k);
+		ret = sieve_algo(sieve, sieve_sz, n, n0, r, &it, k);
 		
 		BN_sub(rem, n, n0);
 

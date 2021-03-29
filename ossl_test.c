@@ -1,5 +1,6 @@
 #include <openssl/bn.h>
 #include "openssl_pga.h"
+#include "nss_pga.h"
 
 int main(){
 
@@ -14,7 +15,7 @@ int main(){
 
 	for(int i=0; i<1000; i++){
 		//int openssl_pga(BIGNUM *p, int k, int t, int r, int l);
-		int returncode = openssl_pga(p, 1024, t, 1024, l);
+		int returncode = openssl_pga(p, 1024, t, 1024, l, nss_generate_sieve, nss_sieve);
 		printf("returncode: %d\n", returncode);
 		// test for primality
 		if(!BN_check_prime(p, ctx, NULL)){
