@@ -67,7 +67,7 @@ int openssl_iter(BIGNUM *p, int k, int r, int t, int l){
 
     unsigned long it = 0; // is passed on as an iterator variable inside openssl_sieve to do the sieve checking. 
 
-	ret = openssl_sieve(sieve, sieve_sz, n, n0, r, &it){
+	ret = openssl_sieve(sieve, sieve_sz, n, n0, r, &it);
     
     // check return value of openssl_sieve & for bit length of returned n
     if(ret != 1 || BN_num_bits(n) != k){
@@ -75,6 +75,7 @@ int openssl_iter(BIGNUM *p, int k, int r, int t, int l){
         BN_free(n0);
         BN_free(n);
         BN_CTX_free(ctx);
+        free(sieve);
 
         return ret;
     }
@@ -88,6 +89,7 @@ int openssl_iter(BIGNUM *p, int k, int r, int t, int l){
     BN_free(n0);
     BN_free(n);
     BN_CTX_free(ctx);
+    free(sieve);
 
     return ret;
 }
@@ -108,7 +110,7 @@ int openssl_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int
                 *it = (*it) + 2;
 
                 // if 'it' goes over max deviation value 'l' then retry with another trial n0, remember that l = sieve_sz/2
-                if(*it >= 2*sieze_sz){
+                if(*it >= 2*sieve_sz){
                     return -1;
                 }
 
@@ -127,8 +129,12 @@ int openssl_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int
         return 0;
     }
 
-    if(!BN_add_word(n, n0, add_bn)){
+    if(!BN_add_word(n0, add_bn)){
         return 0;
+    }
+
+    if(!BN_copy(n, n0)){
+    	return 0;
     }
 
     return 1;

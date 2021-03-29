@@ -3,6 +3,7 @@
 #include <string.h>
 #include "primes.h"
 #include "nat_pga.h"
+#include "nss_pga.h"
 
 /* 
 function: generates prime with natural algorithm, passed on into bignum p
@@ -26,14 +27,28 @@ int nat_pga(BIGNUM *p, int k, int t, int r, int l){
     BIGNUM *n;
 	n = BN_new();
 
-	//int nat_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int r, unsigned long *it){
+    /* SIEVE */
+    unsigned char *sieve;
+    int sieve_sz = l/2;
+
+    sieve = (unsigned char*) malloc(sieve_sz); 
+
+    if(!nss_generate_sieve(sieve, sieve_sz, n0, r)){
+        return -1;
+    }
+
+    unsigned long it = 0; // is passed on as an iterator variable inside openssl_sieve to do the sieve checking. 
+
+    ret = nss_sieve(sieve, sieve_sz, n, n0, r, &it);
+    /* SIEVE */
     
     // check for bit length of returned n
-    if(BN_num_bits(n) != k){
+    if(ret != 1 || BN_num_bits(n) != k){
 
         BN_free(n0);
         BN_free(n);
         BN_CTX_free(ctx);
+        free(sieve);
 
         return ret;
     }
@@ -49,14 +64,15 @@ int nat_pga(BIGNUM *p, int k, int t, int r, int l){
         BN_add(n, n, two_bn); // n = n+2
         
         //int nat_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int r, unsigned long *it)
-        // ret = sieve(); 
+        ret = nss_sieve(sieve, sieve_sz, n, n0, r, &it);
 
         // check bit length of returned n
-        if(BN_num_bits(n) != k){
+        if(ret!= 1 || BN_num_bits(n) != k){
             BN_free(n0);
             BN_free(n);
             BN_free(two_bn);
             BN_CTX_free(ctx);
+            free(sieve);
             return ret;
         }
     }
