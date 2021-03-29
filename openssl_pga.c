@@ -67,7 +67,7 @@ int openssl_iter(BIGNUM *p, int k, int r, int t, int l){
 
     unsigned long it = 0; // is passed on as an iterator variable inside openssl_sieve to do the sieve checking. 
 
-	ret = openssl_sieve(sieve, sieve_sz, n, n0, r, &it);
+	ret = openssl_sieve(sieve, sieve_sz, n, n0, r, &it, k);
     
     // check return value of openssl_sieve & for bit length of returned n
     if(ret != 1 || BN_num_bits(n) != k){
@@ -102,7 +102,7 @@ If n0+it overruns l (max deviation), then we retry by running 'retry' again.
 arguments: sieve = passed on datastructure holding the sieve values, sieve_sz = size of the sieve, n = probable prime if successful, n0 = initial sieve number aka trial, r = number of primes to do trial division with
 returns: 1 if successful, 0 if general error , -1 if failure in generating probable prime
 */
-int openssl_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int r, unsigned long *it){
+int openssl_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int r, unsigned long *it, int k){
     loop:
         // check if n0+it passes sieve 
         for(int i=0; i<r; i++){

@@ -106,7 +106,7 @@ int nss_iter(BIGNUM *p, int k, int r, int t, int l){
 	unsigned long it = 0; // is passed on as an iterator variable inside nss_sieve to do the sieve checking. 
 
 	do{
-		ret = nss_sieve(sieve, sieve_sz, n, n0, r, &it);
+		ret = nss_sieve(sieve, sieve_sz, n, n0, r, &it, k);
 		
 		BN_sub(rem, n, n0);
 
@@ -148,7 +148,7 @@ arguments: ieve = passed on datastructure holding the sieve values, sieve_sz = s
 returns: 1 if successful, 0 if failure, -1 if error 
 */
 
-int nss_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int r, unsigned long *it){
+int nss_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int r, unsigned long *it, int k){
 	// if we overrun sieve array, return failure
 	if(*it >= sieve_sz){
 		return 0;

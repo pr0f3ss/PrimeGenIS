@@ -11,7 +11,7 @@ arguments: p = probable prime if successful, k = bit size of prime, t = # MR rou
 returns: 1 if successful, 0 if failure, -1 if error
 */
 
-int nat_pga(BIGNUM *p, int k, int t, int r, int l){
+int nat_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(unsigned char*, int, BIGNUM, int), int (*sieve_algo)(unsigned char*, int, BIGNUM, BIGNUM, int, unsigned long*, int)){
     int ret = -1;
 
     // create buffer for internal computations
@@ -33,13 +33,13 @@ int nat_pga(BIGNUM *p, int k, int t, int r, int l){
 
     sieve = (unsigned char*) malloc(sieve_sz); 
 
-    if(!nss_generate_sieve(sieve, sieve_sz, n0, r)){
+    if(!generate_sieve(sieve, sieve_sz, n0, r)){
         return -1;
     }
 
     unsigned long it = 0; // is passed on as an iterator variable inside openssl_sieve to do the sieve checking. 
 
-    ret = nss_sieve(sieve, sieve_sz, n, n0, r, &it);
+    ret = sieve_algo(sieve, sieve_sz, n, n0, r, &it, k);
     /* SIEVE */
     
     // check for bit length of returned n
