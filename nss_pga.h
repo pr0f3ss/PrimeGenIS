@@ -1,7 +1,6 @@
 #ifndef NSS_PGA_HEADER
 #define NSS_PGA_HEADER
 
-
 int nss_pga(BIGNUM *p, int k, int t, int u, int r, int l);
 
 int nss_iter(BIGNUM *p, int k, int r, int t, int l);

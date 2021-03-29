@@ -33,6 +33,6 @@ c = securityparam+1 + math.log2(k*ln2/primesum) * ln2
 l = 2*c*k*ln2
 u = securityparam*k*ln2*ln2/l
 
-print("c=%f\nl=%f\nu=%f" % (c, l, u))
+#print("c=%f\nl=%f\nu=%f" % (c, l, u))
 # nss rhs-term
 print(np.log2([k*ln2/2, (1-math.exp(-(l*u)/(k*ln2)))/(1-math.exp(-l/(k*ln2)))]))
