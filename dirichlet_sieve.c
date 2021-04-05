@@ -57,7 +57,6 @@ int dirichlet_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, i
         // initialize bignum holding remainder
         BIGNUM *rem;
         rem = BN_new();
-
         
         if(!BN_rand_range(n, bn_up)){ // generate number in [0, (2^k - (2^(k-1) + 1)]
             BN_free(bn_one);
@@ -116,7 +115,7 @@ int dirichlet_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, i
 
         *it = 1; // set it=1 to signal that next iteration should just add mr
     }else{
-        if(!BN_add(n, n, n0)){
+        if(!BN_add(n, n, n0)){ // n = n+mr
             return -1;
         }
     }
@@ -143,7 +142,7 @@ int dirichlet_generate_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n0, int
     BIGNUM *bn_prime;
     bn_prime = BN_new();
 
-    // compute product of first r odd primes
+    // compute product of first r-1 odd primes
     for(int i=1; i<r; i++){
         BN_set_word(bn_prime, (BN_ULONG) primes[i]);
         if(!BN_mul(n0, n0, bn_prime, ctx)){
