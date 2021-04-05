@@ -150,8 +150,6 @@ int dirichlet_generate_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n0, int
         }
     }
 
-    printf("bits of mr: %d\n", BN_num_bits(n0));
-
     BN_CTX_free(ctx);
     BN_free(bn_prime);
 

@@ -5,8 +5,7 @@
 #include "nss_pga.h"
 #include "dirichlet_sieve.h"
 
-int main(int argc, char **argv){
-
+int main(){
 	BIGNUM *p;
 	p = BN_new();
 
@@ -21,10 +20,8 @@ int main(int argc, char **argv){
 
 	int l_inc = 512;
 
-	char filename[64];
-	sprintf(filename, "data/dirichlet_benchmark/dirichlet_nss_analysis_r%d.csv", r);
 	FILE *fd;
-	fd = fopen(filename, "w+");
+	fd = fopen("data/dirichlet_benchmark/dirichlet_nss_analysis_r33.csv", "w+");
 	fprintf(fd,"r, l, avgruntime\n");
 
 	while(l<0x10000){
