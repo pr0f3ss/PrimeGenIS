@@ -2,29 +2,30 @@
 #include <string.h> 
 #include <time.h>
 #include <openssl/bn.h>
+#include "nat_pga.h"
 #include "nss_pga.h"
-#include "dirichlet_sieve.h"
 
-int main(){
+int main(int argc, char **argv){
+
 	BIGNUM *p;
 	p = BN_new();
 
 	// seen as set
 	int k = 1024; //bitsize
-	int u = 10; // max nss_iter rounds
 	int t = 5; // MR rounds
+	int l = 40000; // max deviation
 
-	int l = 4000; // max deviation
-
-	int r = 33; 
+	int r = atoi(argv[1]); // get r from program argument
 
 	int l_inc = 512;
 
+	char filename[64];
+	sprintf(filename, "data/nat_benchmark/nss_sieve/1strun_r%d.csv", r);
 	FILE *fd;
-	fd = fopen("data/dirichlet_benchmark/dirichlet_nss_analysis_r33.csv", "w+");
+	fd = fopen(filename, "w+");
 	fprintf(fd,"r, l, avgruntime\n");
 
-	while(l<0x10000){
+	while(l<0x186A0){ //100'000
 		
 		clock_t start, end;
 		double cpu_time_used;
@@ -32,8 +33,7 @@ int main(){
 		start = clock();
 
 		for(int i=0; i<8192; i++){
-			//int nss_pga(BIGNUM *p, int k, int t, int u, int r, int l);
-			int returncode = nss_pga(p, k, t, u, r, l, dirichlet_generate_sieve, dirichlet_sieve);
+			int returncode = openssl_pga(p, k, t, r, l, nss_generate_sieve, nss_sieve);
 		}
 
 		end = clock();
@@ -43,7 +43,7 @@ int main(){
 		fprintf(stdout, "Test done for: r=%d, l=%d in %fs\n", r, l, cpu_time_used);
 		fprintf(fd, "%d, %d, %f\n", r, l, cpu_time_used);
 
-		if(l>0x4000){
+		if(l>0xFA00){ //64000
 			l_inc = 1024;
 		}
 

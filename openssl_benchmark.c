@@ -2,7 +2,7 @@
 #include <string.h> 
 #include <time.h>
 #include <openssl/bn.h>
-#include "nss_pga.h"
+#include "openssl_pga.h"
 
 int main(int argc, char **argv){
 
@@ -11,22 +11,20 @@ int main(int argc, char **argv){
 
 	// seen as set
 	int k = 1024; //bitsize
-	int u = 10; // max nss_iter rounds
 	int t = 5; // MR rounds
-
 	int l = 4000; // max deviation
 
-	int r = 33;
+	int r = atoi(argv[1]); // get r from program argument
 
 	int l_inc = 512;
 
 	char filename[64];
-	sprintf(filename, "data/nss_benchmark/dirichlet_sieve/2ndrun_r%d.csv", r);
+	sprintf(filename, "data/openssl_benchmark/openssl_sieve/1strun_r%d.csv", r);
 	FILE *fd;
 	fd = fopen(filename, "w+");
 	fprintf(fd,"r, l, avgruntime\n");
 
-	while(l<0x1D4C0){ //120'000
+	while(l<0x14000){ //81920
 		
 		clock_t start, end;
 		double cpu_time_used;
@@ -34,7 +32,7 @@ int main(int argc, char **argv){
 		start = clock();
 
 		for(int i=0; i<8192; i++){
-			int returncode = nss_pga(p, k, t, u, r, l, dirichlet_generate_sieve, dirichlet_sieve);
+			int returncode = openssl_pga(p, k, t, r, l, openssl_generate_sieve, openssl_sieve);
 		}
 
 		end = clock();
