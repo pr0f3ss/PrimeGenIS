@@ -42,7 +42,7 @@ int dirichlet_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, i
         
         // this do-while loop generates 'a' relatively prime to mr (gcd(mr,a) = 1)
         do{
-            if(!BN_rand_range(bn_a, n)){ // generate number in [0, mr]
+            if(!BN_rand_range(bn_a, n0)){ // generate number in [0, mr]
                 BN_free(bn_one);
                 BN_free(bn_a);
                 BN_free(bn_gcd);
@@ -58,7 +58,7 @@ int dirichlet_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, i
                 return -1;
             } 
 
-            if(!BN_gcd(bn_gcd, n, bn_a, ctx)){ // compute gcd(n, bn_a)
+            if(!BN_gcd(bn_gcd, n0, bn_a, ctx)){ // compute gcd(n0, bn_a)
                 BN_free(bn_one);
                 BN_free(bn_a);
                 BN_free(bn_gcd);
