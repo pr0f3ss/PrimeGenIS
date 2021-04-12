@@ -76,6 +76,7 @@ int nat_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(unsigne
     BN_free(n0);
 	BN_free(n);
     BN_CTX_free(ctx);
+    free(sieve);
 
 	return ret;
 }

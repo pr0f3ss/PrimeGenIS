@@ -33,7 +33,7 @@ int main(int argc, char **argv){
 		start = clock();
 
 		for(int i=0; i<8192; i++){
-			int returncode = openssl_pga(p, k, t, r, l, nss_generate_sieve, nss_sieve);
+			int returncode = nat_pga(p, k, t, r, l, nss_generate_sieve, nss_sieve);
 		}
 
 		end = clock();

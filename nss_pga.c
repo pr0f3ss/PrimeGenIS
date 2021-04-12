@@ -72,8 +72,6 @@ int nss_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsign
 
 	int ret = -1; // return code of nss_sieve
 
-
-
 	/* ========= SIEVE GENERATION SECTION ============= */
 
 	unsigned char *sieve;
@@ -87,6 +85,7 @@ int nss_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsign
 
 		// todo: figure out how to skip do while loop if sieve generation fails (to free all buffers correctly) without having to repeat code
 		BN_free(n);
+		BN_free(n0);
 		BN_free(rem);
 		BN_CTX_free(ctx);
 		free(sieve);
@@ -115,6 +114,7 @@ int nss_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsign
 			ret = 0;
 
 			BN_free(n);
+			BN_free(n0);
 			BN_free(rem);
 			BN_free(bn_l);
 			BN_CTX_free(ctx);
@@ -132,6 +132,7 @@ int nss_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsign
 	}
 
 	BN_free(n);
+	BN_free(n0);
 	BN_free(rem);
 	BN_free(bn_l);
 	BN_CTX_free(ctx);
@@ -182,7 +183,7 @@ int nss_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int r, 
 
 	// Postcondition: n now contains n0+2*it, which did not fail our trial division sieve
 
-	free(add_bn);
+	BN_free(add_bn);
 
 	//printf("returned value = 1\n");
 

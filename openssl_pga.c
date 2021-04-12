@@ -59,6 +59,13 @@ int openssl_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(un
 
 	sieve = (unsigned char*) malloc(sieve_sz); 
 
+    if(sieve == NULL){
+        BN_free(n0);
+        BN_free(n);
+        BN_CTX_free(ctx);
+        return ret;
+    }
+
     if(!generate_sieve(sieve, sieve_sz, n0, r)){
         return -1;
     }
@@ -103,9 +110,10 @@ arguments: sieve = passed on datastructure holding the sieve values, sieve_sz = 
 returns: 1 if successful, 0 if general error , -1 if failure in generating probable prime
 */
 int openssl_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int r, unsigned long *it, int k){
+    int itx = r > sieve_sz ? sieve_sz : r;
     loop:
         // check if n0+it passes sieve 
-        for(int i=0; i<r; i++){
+        for(int i=0; i<itx; i++){
             if(((unsigned long) sieve[i] + (*it)) % primes[i]  == 0){
                 *it = (*it) + 2;
 
@@ -126,16 +134,21 @@ int openssl_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int
     unsigned long add_value = *it;
 
 	if(!BN_set_word(add_bn, (BN_ULONG) add_value)){
+        BN_free(add_bn);
         return 0;
     }
 
     if(!BN_add_word(n0, add_bn)){
+        BN_free(add_bn);
         return 0;
     }
 
     if(!BN_copy(n, n0)){
+        BN_free(add_bn);
     	return 0;
     }
+
+    BN_free(add_bn);
 
     return 1;
 }
@@ -147,7 +160,8 @@ returns: 1 if successful, 0 if general error
 */
 
 int openssl_generate_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n0, int r){
-    for(int i=0; i<r; i++){
+    int itx = r > sieve_sz ? sieve_sz : r;
+    for(int i=0; i<itx; i++){
         BN_ULONG mod = BN_mod_word(n0, (BN_ULONG)primes[i]);
         if(mod == (BN_ULONG) -1){
             return 0;
