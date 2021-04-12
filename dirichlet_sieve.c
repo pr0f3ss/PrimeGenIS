@@ -50,7 +50,7 @@ int dirichlet_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, i
                 return -1;
             }
             
-            if(!BN_add(bn_a, bn_a, bn_one){ // bn_a in [1, mr+1]
+            if(!BN_add(bn_a, bn_a, bn_one)){ // bn_a in [1, mr+1]
                 BN_free(bn_one);
                 BN_free(bn_a);
                 BN_free(bn_gcd);

@@ -3,6 +3,7 @@
 #include <time.h>
 #include <openssl/bn.h>
 #include "nss_pga.h"
+#include "dirichlet_sieve.h"
 
 int main(int argc, char **argv){
 
