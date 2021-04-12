@@ -18,7 +18,7 @@ int main(int argc, char **argv){
 
 	int l_inc = 512;
 
-	char filename[64];
+	char filename[256];
 	sprintf(filename, "data/openssl_benchmark/openssl_sieve/1strun_r%d.csv", r);
 	FILE *fd;
 	fd = fopen(filename, "w+");
