@@ -182,7 +182,7 @@ returns: 1 if successful, 0 if error
 is chosen from is too small which breaks the purpose of a crypto rng
 Also obviously mr must be < 2^k - 1, s.t. there exists a z satisfying the condition n = z*mr+1 for the first n. 
 */
-int dirichlet_generate_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n0, int r){
+int dirichlet_generate_sieve(unsigned char **sieve, int sieve_sz, BIGNUM *n0, int r){
     // create buffer for internal computations
 	BN_CTX *ctx;
 	ctx = BN_CTX_new();
@@ -196,6 +196,8 @@ int dirichlet_generate_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n0, int
     for(int i=1; i<r; i++){
         BN_set_word(bn_prime, (BN_ULONG) primes[i]);
         if(!BN_mul(n0, n0, bn_prime, ctx)){
+            BN_CTX_free(ctx);
+            BN_free(bn_prime);
             return 0;
         }
     }

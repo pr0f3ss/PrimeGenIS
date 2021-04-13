@@ -10,7 +10,7 @@ arguments: p = probable prime if successful, k = bit size of prime, t = # MR rou
 returns: 1 if successful, 0 if failure, -1 if error
 */
 
-int nat_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(unsigned char*, int, BIGNUM*, int), int (*sieve_algo)(unsigned char*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
+int nat_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(unsigned char**, int, BIGNUM*, int), int (*sieve_algo)(unsigned char*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
     int ret = -1;
 
 
@@ -31,9 +31,11 @@ int nat_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(unsigne
     unsigned char *sieve;
     int sieve_sz = l/2;
 
-    sieve = (unsigned char*) malloc(sieve_sz); 
-
-    if(!generate_sieve(sieve, sieve_sz, n0, r)){
+    if(!generate_sieve(&sieve, sieve_sz, n0, r)){
+        BN_free(n0);
+        BN_free(n);
+        BN_CTX_free(ctx);
+        free(sieve);
         return -1;
     }
 

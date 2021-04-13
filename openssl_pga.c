@@ -35,7 +35,7 @@ arguments: p = returned prime if successfully generated, k = bit size of prime, 
 returns: 1 if successful, 0 if sieve generation failed, -1 if failure in creating prime 
 other:  l = max deviation from initially generated num and probable prime 
 */
-int openssl_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsigned char*, int, BIGNUM*, int), int (*sieve_algo)(unsigned char*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
+int openssl_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsigned char**, int, BIGNUM*, int), int (*sieve_algo)(unsigned char*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
 
     int ret = -1;
 
