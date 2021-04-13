@@ -9,7 +9,7 @@ function: generates prime with openssl algorithm, passed on into bignum p
 arguments: p = probable prime if successful, k = bit size of prime, t = # MR rounds, r = number of primes to do trial division with, l = max deviation from output prime to trial 
 returns: 1 if successful, 0 if general error
 */
-int openssl_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(unsigned char*, int, BIGNUM*, int), int (*sieve_algo)(unsigned char*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
+int openssl_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(unsigned char**, int, BIGNUM*, int), int (*sieve_algo)(unsigned char*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
     int ret = -1;
     
     BIGNUM *n;
@@ -53,23 +53,17 @@ int openssl_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(un
 	n = BN_new();
 
     /* ========= SIEVE GENERATION SECTION ============= */
-
     unsigned char *sieve;
 	int sieve_sz = l/2;
 
-	sieve = (unsigned char*) malloc(sieve_sz); 
-
-    if(sieve == NULL){
+    if(!generate_sieve(&sieve, sieve_sz, n0, r)){
         BN_free(n0);
         BN_free(n);
         BN_CTX_free(ctx);
+        free(sieve);
+
         return ret;
     }
-
-    if(!generate_sieve(sieve, sieve_sz, n0, r)){
-        return -1;
-    }
-
     /* ========= END SIEVE GENERATION SECTION ============= */
 
     unsigned long it = 0; // is passed on as an iterator variable inside openssl_sieve to do the sieve checking. 
@@ -78,7 +72,6 @@ int openssl_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(un
     
     // check return value of openssl_sieve & for bit length of returned n
     if(ret != 1 || BN_num_bits(n) != k){
-
         BN_free(n0);
         BN_free(n);
         BN_CTX_free(ctx);
@@ -110,10 +103,9 @@ arguments: sieve = passed on datastructure holding the sieve values, sieve_sz = 
 returns: 1 if successful, 0 if general error , -1 if failure in generating probable prime
 */
 int openssl_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int r, unsigned long *it, int k){
-    int itx = r > sieve_sz ? sieve_sz : r;
     loop:
         // check if n0+it passes sieve 
-        for(int i=0; i<itx; i++){
+        for(int i=0; i<r; i++){
             if(((unsigned long) sieve[i] + (*it)) % primes[i]  == 0){
                 *it = (*it) + 2;
 
@@ -159,14 +151,20 @@ arguments: sieve = passed on datastructure holding the sieve values, sieve_sz = 
 returns: 1 if successful, 0 if general error 
 */
 
-int openssl_generate_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n0, int r){
-    int itx = r > sieve_sz ? sieve_sz : r;
-    for(int i=0; i<itx; i++){
+int openssl_generate_sieve(unsigned char **sieve, int sieve_sz, BIGNUM *n0, int r){
+    *sieve = NULL;
+    *sieve = (unsigned char*) malloc(r); 
+
+    if(*sieve == NULL){
+        return 1;
+    }
+
+    for(int i=0; i<r; i++){
         BN_ULONG mod = BN_mod_word(n0, (BN_ULONG)primes[i]);
         if(mod == (BN_ULONG) -1){
             return 0;
         }
-        sieve[i] = (unsigned char) mod;
+        (*sieve)[i] = (unsigned char) mod;
     }
 
     return 1;
