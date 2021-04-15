@@ -2,7 +2,6 @@
 #include <string.h> 
 #include <time.h>
 #include <openssl/bn.h>
-#include "openssl_pga.h"
 
 int main(int argc, char **argv){
 
@@ -19,7 +18,7 @@ int main(int argc, char **argv){
 	int l_inc = 512;
 
 	char filename[256];
-	sprintf(filename, "data/openssl_benchmark/openssl_sieve/1strun_r%d.csv", r);
+	sprintf(filename, "data/openssl_benchmark/native_implementation/1strun_r%d.csv", r);
 	FILE *fd;
 	fd = fopen(filename, "w+");
 	fprintf(fd,"r, l, avgruntime\n");
@@ -32,7 +31,7 @@ int main(int argc, char **argv){
 		start = clock();
 
 		for(int i=0; i<8192; i++){
-			int returncode = openssl_pga(p, k, t, r, l, openssl_generate_sieve, openssl_sieve);
+			int returncode = BN_generate_prime_ex(p, 1024, 0, NULL, NULL, NULL);
 		}
 
 		end = clock();
