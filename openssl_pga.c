@@ -52,7 +52,7 @@ int openssl_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(un
     BIGNUM *n;
 	n = BN_new();
 
-    if(BN_rand(n0, k, BN_RAND_TOP_TWO, BN_RAND_BOTTOM_ODD)){
+    if(!BN_rand(n0, k, BN_RAND_TOP_TWO, BN_RAND_BOTTOM_ODD)){
         ret = -1;
         goto free_bn;
     }
