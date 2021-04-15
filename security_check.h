@@ -1,4 +1,0 @@
-#ifndef SECURITY_CHECK_HEADER
-#define SECURITY_CHECK_HEADER
-
-#endif
