@@ -13,7 +13,7 @@ int main(int argc, char **argv){
 	int t = 5; // MR rounds
 	int l = 0; // max deviation
 
-	int r = atoi(argv[1]); // get r from program argument
+	int r = 0;
 
 	int l_inc = 512;
 
