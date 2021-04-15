@@ -11,8 +11,7 @@ returns: 1 if successful, 0 if failure, -1 if error
 */
 
 int nat_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(unsigned char**, int, BIGNUM*, int), int (*sieve_algo)(unsigned char*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
-    int ret = -1;
-
+    int ret = 0;
 
     // create buffer for internal computations
 	BN_CTX *ctx;
@@ -21,38 +20,32 @@ int nat_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(unsigne
     // create trial
     BIGNUM *n0;
 	n0 = BN_new();
-	BN_rand(n0, k, BN_RAND_TOP_TWO, BN_RAND_BOTTOM_ODD);
 
     // initialize returned value from sieve
     BIGNUM *n;
 	n = BN_new();
 
-    /* SIEVE */
     unsigned char *sieve;
     int sieve_sz = l/2;
 
+    if(!BN_rand(n0, k, BN_RAND_TOP_TWO, BN_RAND_BOTTOM_ODD)){
+		ret = -1;
+        goto free_bn; // sieve hasn't been alloc'ed yet
+    }
+
     if(!generate_sieve(&sieve, sieve_sz, n0, r)){
-        BN_free(n0);
-        BN_free(n);
-        BN_CTX_free(ctx);
-        free(sieve);
-        return -1;
+        ret = -1;
+        goto free_bn_sieve;
     }
 
     unsigned long it = 0; // is passed on as an iterator variable inside openssl_sieve to do the sieve checking. 
 
     ret = sieve_algo(sieve, sieve_sz, n, n0, r, &it, k);
-    /* SIEVE */
 
     // check for bit length of returned n
     if(ret != 1 || BN_num_bits(n) != k){
-
-        BN_free(n0);
-        BN_free(n);
-        BN_CTX_free(ctx);
-        free(sieve);
-
-        return ret;
+        ret = 0;
+        goto free_bn_sieve;
     }
 
     // pre-condition: n is odd, k-bit long
@@ -62,24 +55,25 @@ int nat_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(unsigne
         ret = sieve_algo(sieve, sieve_sz, n, n0, r, &it, k);
         
         // check bit length of returned n
-        if(ret!= 1 || BN_num_bits(n) != k){
-            BN_free(n0);
-            BN_free(n);
-            BN_CTX_free(ctx);
-            free(sieve);
-            return ret;
+        if(ret != 1 || BN_num_bits(n) != k){
+            ret = 0;
+            goto free_bn_sieve;
         }
     }
-    // post-condition: n passed t MR-rounds and trial division, so probable prime => return value set to 1 
+    // post-condition: n passed t MR-rounds, so probable prime 
+
+	if(!BN_copy(p, n)){ // copy value from n to p on successful prime generation
+        ret = -1;
+        goto free_bn_sieve;
+    } 
+
+    free_bn_sieve:
+        free(sieve);
+    free_bn:
+        BN_free(n0);
+        BN_free(n);
+        BN_CTX_free(ctx);
     
-    ret = 1;
-	BN_copy(p, n); // copy value from n to p on successful prime generation
-
-    BN_free(n0);
-	BN_free(n);
-    BN_CTX_free(ctx);
-    free(sieve);
-
 	return ret;
 }
 

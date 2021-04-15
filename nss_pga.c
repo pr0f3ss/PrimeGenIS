@@ -35,7 +35,9 @@ int nss_pga(BIGNUM *p, int k, int t, int u, int r, int l, int (*generate_sieve)(
 	}
 
 	if(ret == 1){
-		BN_copy(p, n); // copy value from n to p on successful prime generation
+		if(!BN_copy(p, n)){ // copy value from n to p on successful prime generation
+			ret = -1;
+		} 
 	}
 
 	BN_free(n);
@@ -52,6 +54,7 @@ other:  l = max deviation from initially generated num and probable prime
 */
 
 int nss_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsigned char**, int, BIGNUM*, int), int (*sieve_algo)(unsigned char*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
+	int ret = 0; // return code of nss_iter
 
 	// create buffer for internal computations
 	BN_CTX *ctx;
@@ -60,7 +63,6 @@ int nss_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsign
 	// generate k-bit, odd number, aka trial value
 	BIGNUM *n0;
 	n0 = BN_new();
-	BN_rand(n0, k, BN_RAND_TOP_TWO, BN_RAND_BOTTOM_ODD); // question: Do top bits have to be 1 for valid k bit prime output?
 
 	// p is going to copy from this var on success
 	BIGNUM *n;
@@ -70,7 +72,14 @@ int nss_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsign
 	BIGNUM *rem;
 	rem = BN_new();
 
-	int ret = -1; // return code of nss_sieve
+	// holds l in a bignum
+	BIGNUM *bn_l;
+	bn_l = BN_new();
+
+	if(!BN_rand(n0, k, BN_RAND_TOP_TWO, BN_RAND_BOTTOM_ODD)){
+		ret = -1;
+		goto free_bn;
+	}
 
 	/* ========= SIEVE GENERATION SECTION ============= */
 
@@ -78,63 +87,47 @@ int nss_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsign
 	int sieve_sz = l/2;
 
 	// generate sieve for nss_sieve method
-	int returncode_sievegen = generate_sieve(&sieve, sieve_sz, n0, r);
-	if(returncode_sievegen != 1){
-
-		// todo: figure out how to skip do while loop if sieve generation fails (to free all buffers correctly) without having to repeat code
-		BN_free(n);
-		BN_free(n0);
-		BN_free(rem);
-		BN_CTX_free(ctx);
-		free(sieve);
-
-		return ret;
+	if(!generate_sieve(&sieve, sieve_sz, n0, r)){
+		ret = -1;
+		goto free_bn_sieve;
 	}
 
 	/* ========= END SIEVE GENERATION SECTION ============= */
 
-	// holds l in a bignum
-	BIGNUM *bn_l;
-	bn_l = BN_new();
-
-	BN_set_word(bn_l, l);
-
+	if(!BN_set_word(bn_l, l)){
+		ret = -1;
+		goto free_bn_sieve;
+	}
 
 	unsigned long it = 0; // is passed on as an iterator variable inside nss_sieve to do the sieve checking. 
 
+	// pre-condition: n0 holds trial value
 	do{
 		ret = sieve_algo(sieve, sieve_sz, n, n0, r, &it, k);
 		
 		BN_sub(rem, n, n0);
 
-		// question: Is l a 'free' parameter or do we consider it as set? What value should it hold? (Maybe n0/2?)
 		if(ret != 1 || !BN_cmp(rem, bn_l) || BN_num_bits(n) != k){
 			ret = 0;
-
-			BN_free(n);
-			BN_free(n0);
-			BN_free(rem);
-			BN_free(bn_l);
-			BN_CTX_free(ctx);
-			free(sieve);
-
-			return ret;
-
+			goto free_bn_sieve;
 		}
 
 	}while(!BN_is_prime_fasttest_ex(n, t, ctx, 0, NULL)); // signature: int BN_is_prime_fasttest_ex(const BIGNUM *p, int nchecks, BN_CTX *ctx, int do_trial_division, BN_GENCB *cb);
 
+	// post-condition: ret = 1, n passed t MR-rounds and n-n0 < l
 
-	if(ret == 1){
-		BN_copy(p, n); // copy value from n to p on successful prime generation
-	}
+	if(!BN_copy(p, n)){ // copy value from n to p on successful prime generation
+		ret = -1;
+	} 
 
-	BN_free(n);
-	BN_free(n0);
-	BN_free(rem);
-	BN_free(bn_l);
-	BN_CTX_free(ctx);
-	free(sieve);
+	free_bn_sieve:
+			free(sieve);
+	free_bn:
+		BN_free(n);
+		BN_free(n0);
+		BN_free(rem);
+		BN_free(bn_l);
+		BN_CTX_free(ctx);
 
 	return ret;
 }
@@ -148,25 +141,25 @@ returns: 1 if successful, 0 if failure, -1 if error
 */
 
 int nss_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int r, unsigned long *it, int k){
+	int ret = 0;
+
 	// if we overrun sieve array, return failure
 	if(*it >= sieve_sz){
-		return 0;
+		return ret;
 	}	
 	// iterate until next zero entry of sieve
 	unsigned long deref = *it;
-	//printf("before: %lu, ", deref);
 	while(deref < sieve_sz && sieve[deref] != 0){
 		deref++;
 
 		if(deref >= sieve_sz){
-			return 0;
+			return ret;
 		}
 	}
 
 	*it = deref;
 	(*it)++;
 
-	//printf("after: %lu\n", deref);
 	// Precondition: sieve[*it] = 0 and *it < sieve_sz
 	// n = n0+2*(*it) as we know that it passed our sieve
 	unsigned long add_value = 2 * deref;
@@ -174,18 +167,25 @@ int nss_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int r, 
 	BIGNUM *add_bn;
 	add_bn = BN_new();
 
-	BN_set_word(add_bn, add_value);
+	if(!BN_set_word(add_bn, add_value)){
+		ret = -1;
+		goto free_bn;
+	}
 
 	// place result into n
-	BN_add(n, n0, add_bn);
+	if(!BN_add(n, n0, add_bn)){
+		ret = -1;
+		goto free_bn;
+	}
 
 	// Postcondition: n now contains n0+2*it, which did not fail our trial division sieve
 
-	BN_free(add_bn);
+	ret = 1;
 
-	//printf("returned value = 1\n");
+	free_bn:
+		BN_free(add_bn);
 
-	return 1;
+	return ret;
 }
 
 /*
@@ -195,21 +195,22 @@ returns: 1 if successful, 0 if error
 */
 
 int nss_generate_sieve(unsigned char **sieve, int sieve_sz, BIGNUM *n0, int r){
-	int ret = 1;
+	int ret = 0;
 	unsigned long offset;
-
-	BN_CTX *ctx;
-	ctx = BN_CTX_new();
 
 	// initialize sieve
 	*sieve = NULL;
     *sieve = (unsigned char*) malloc(sieve_sz); 
 
     if(*sieve == NULL){
-        return 1;
+        return -1;
     } 
 
 	memset(*sieve, 0, sieve_sz); // init sieve values all to 0
+
+	// internal buffer for computations
+	BN_CTX *ctx;
+	ctx = BN_CTX_new();
 
 	// used to store current prime as BN
 	BIGNUM *idx_prime;
@@ -220,16 +221,17 @@ int nss_generate_sieve(unsigned char **sieve, int sieve_sz, BIGNUM *n0, int r){
 	rem = BN_new();
 
 	for(int i=0; i<r; i++){
-		// fetch current prime from primes table (containing the first 2048 primes)
+		// fetch current prime from primes table
 		unsigned long current_prime = primes[i];
 		
-		BN_set_word(idx_prime, current_prime);
+		if(!BN_set_word(idx_prime, current_prime)){
+			ret = -1;
+			goto free_bn;
+		}
 
 		if(!BN_mod(rem, n0, idx_prime, ctx)){
-			BN_CTX_free(ctx);
-			BN_free(idx_prime);
-			BN_free(rem);
-			ret = 0;
+			ret = -1;
+			goto free_bn;
 		}
 
 		if(BN_is_zero(rem)){
@@ -245,9 +247,12 @@ int nss_generate_sieve(unsigned char **sieve, int sieve_sz, BIGNUM *n0, int r){
 		}
 	}
 
-	BN_CTX_free(ctx);
-	BN_free(idx_prime);
-	BN_free(rem);
+	ret = 1;
+
+	free_bn:
+		BN_CTX_free(ctx);
+		BN_free(idx_prime);
+		BN_free(rem);
 
 	return ret;
 
