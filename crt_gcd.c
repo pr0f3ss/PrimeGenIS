@@ -3,18 +3,21 @@
 #include <string.h>
 #include "primes.h"
 #include "dirichlet_sieve.h"
+#include <openssl/err.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 int gcdExtended(BIGNUM* a, BIGNUM* b, BIGNUM* ri, BIGNUM* si, BIGNUM* gcd){
-
+	int ret = 0;
     // create buffer for internal computations
     BN_CTX *ctx;
     ctx = BN_CTX_new();
     
-    BIGNUM *bn_r1;
-    bn_r1 = BN_new();
+    BIGNUM *r1;
+    r1 = BN_new();
 
-    BIGNUM *bn_s1;
-    bn_s1 = BN_new();
+    BIGNUM *s1;
+    s1 = BN_new();
 
     BIGNUM *bn_divid;
     bn_divid = BN_new();
@@ -55,7 +58,7 @@ int gcdExtended(BIGNUM* a, BIGNUM* b, BIGNUM* ri, BIGNUM* si, BIGNUM* gcd){
         goto free_bn;
     }
 
-    if(!BN_mul(bn_divid, bn_divid, r1)){ // b/a * r1
+    if(!BN_mul(bn_divid, bn_divid, r1, ctx)){ // b/a * r1
         ret = -1;
         goto free_bn;
     }
@@ -101,7 +104,7 @@ int main(){
     unsigned char *sieve;
 	int sieve_sz = 0;
 
-    if(!generate_sieve(&sieve, sieve_sz, n0, r)){
+    if(!dirichlet_generate_sieve(&sieve, sieve_sz, n0, r)){
         ret = -1;
         goto free_bn;
     }
@@ -135,10 +138,8 @@ int main(){
     bn_pi = BN_new();
 
     // bignum arr
-    BIGNUM* arr_ai[r];
-    for(int i=0; i<r; i++){
-        arr_i[i] = BN_new();
-    }
+    BIGNUM* bn_ai;
+	bn_ai = BN_new();
 
     BIGNUM* bn_MI;
     bn_MI = BN_new();
@@ -151,20 +152,19 @@ int main(){
 
 
     // ================= START TEST =======================
-
     clock_t start, end;
     double cpu_time_used;
 
     start = clock();
 
     for(int i=0; i<32000; i++){
-
+    	RAND_poll();
         if(!BN_set_word(bn_a, (BN_ULONG) 0)){ // reset
             ret = -1;
             goto free_bn;
         }
 
-        for(int j=0; j<r; j++){
+        for(int j=1; j<r; j++){
             if(!BN_set_word(bn_pi, (BN_ULONG) primes[j])){ // = pi
                 ret = -1;
                 goto free_bn;
@@ -175,12 +175,12 @@ int main(){
                 goto free_bn;
             } 
 
-            if(!BN_rand_range(arr_ai[j], bn_pi)){ // generate number in [0, pi-2]
+            if(!BN_rand_range(bn_ai, bn_pi)){ // generate number in [0, pi-2]
                 ret = -1;
                 goto free_bn;
             }
 
-            if(!BN_add(arr_ai[j], arr_ai[j], bn_one)){ // put ai in [1, pi-1]
+            if(!BN_add(bn_ai, bn_ai, bn_one)){ // put ai in [1, pi-1]
                 ret = -1;
                 goto free_bn;
             }
@@ -202,12 +202,12 @@ int main(){
                 goto free_bn;
             }
 
-            if(!BN_mul(bn_si, bn_si, bn_MI)){ // ei = si * MI
+            if(!BN_mul(bn_si, bn_si, bn_MI, ctx)){ // ei = si * MI
                 ret = -1;
                 goto free_bn;
             }
 
-            if(!BN_mul(bn_ri, arr_ai[j], bn_si)){ // = ai*ei
+            if(!BN_mul(bn_ri, bn_ai, bn_si, ctx)){ // = ai*ei
                 ret = -1;
                 goto free_bn;
             }
@@ -249,9 +249,7 @@ int main(){
         BN_free(bn_si);
         free(sieve);
         fclose(fd);
-        for(int i=0; i<r; i++){
-            BN_free(arr_ai[i]);
-        }
+        BN_free(bn_ai);
 
     return ret;
 }

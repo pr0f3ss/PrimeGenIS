@@ -25,7 +25,7 @@ int main(){
     unsigned char *sieve;
 	int sieve_sz = 0;
 
-    if(!generate_sieve(&sieve, sieve_sz, n0, r)){
+    if(!dirichlet_generate_sieve(&sieve, sieve_sz, n0, r)){
         ret = -1;
         goto free_bn;
     }
