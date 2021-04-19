@@ -3,6 +3,7 @@
 #include <time.h>
 #include <openssl/bn.h>
 #include "openssl_pga.h"
+#include "nss_pga.h"
 
 int main(int argc, char **argv){
 
@@ -12,19 +13,19 @@ int main(int argc, char **argv){
 	// seen as set
 	int k = 1024; //bitsize
 	int t = 5; // MR rounds
-	int l = 0; // max deviation
+	int l = 4000; // max deviation
 
 	int r = atoi(argv[1]); // get r from program argument
 
 	int l_inc = 512;
 
 	char filename[256];
-	sprintf(filename, "data/openssl_benchmark/openssl_sieve/1strun_r%d.csv", r);
+	sprintf(filename, "data/openssl_benchmark/nss_sieve/1strun_r%d.csv", r);
 	FILE *fd;
 	fd = fopen(filename, "w+");
 	fprintf(fd,"r, l, avgruntime\n");
 
-	while(l<1){
+	while(l<64000){
 		
 		clock_t start, end;
 		double cpu_time_used;
@@ -32,7 +33,7 @@ int main(int argc, char **argv){
 		start = clock();
 
 		for(int i=0; i<8192; i++){
-			int returncode = openssl_pga(p, k, t, r, l, openssl_generate_sieve, openssl_sieve);
+			int returncode = openssl_pga(p, k, t, r, l, nss_generate_sieve, nss_sieve);
 		}
 
 		end = clock();
