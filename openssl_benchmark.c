@@ -25,7 +25,7 @@ int main(int argc, char **argv){
 	fd = fopen(filename, "w+");
 	fprintf(fd,"r, l, avgruntime\n");
 
-	while(l<64000){
+	while(l<1){
 		
 		clock_t start, end;
 		double cpu_time_used;

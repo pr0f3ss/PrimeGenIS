@@ -108,7 +108,7 @@ int openssl_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int
     unsigned long max_deviation = 0xffffffffffffffffUL - primes[r-1]; // use max UL - biggest prime as boundary
     loop:
         // check if n0+it passes sieve 
-        for(int i=0; i<r; i++){
+        for(int i=1; i<r; i++){
             if(((unsigned long) sieve[i] + (*it)) % primes[i]  == 0){
                 *it = (*it) + 2;
 
@@ -124,29 +124,16 @@ int openssl_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int
     
 
     // n0+it is now a probable prime, copy n0+it into n
-    BIGNUM *add_bn;
-	add_bn = BN_new();
     unsigned long add_value = *it;
+    ret = 1;
 
-	if(!BN_set_word(add_bn, (BN_ULONG) add_value)){
+    if(!BN_add_word(n0, (BN_ULONG) add_value)){
         ret = -1;
-        goto free_bn;
-    }
-
-    if(!BN_add_word(n0, add_bn)){
-        ret = -1;
-        goto free_bn;
     }
 
     if(!BN_copy(n, n0)){
         ret = -1;
-        goto free_bn;
     }
-
-    ret = 1;
-
-    free_bn:
-        BN_free(add_bn);
 
     return ret;
 }
@@ -165,7 +152,7 @@ int openssl_generate_sieve(unsigned char **sieve, int sieve_sz, BIGNUM *n0, int 
         return -1;
     }
 
-    for(int i=0; i<r; i++){
+    for(int i=1; i<r; i++){
         BN_ULONG mod = BN_mod_word(n0, (BN_ULONG)primes[i]);
         if(mod == (BN_ULONG) -1){
             return 0;
