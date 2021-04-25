@@ -20,7 +20,7 @@ int main(int argc, char **argv){
 	int l_inc = 512;
 
 	char filename[256];
-	sprintf(filename, "data/openssl_benchmark/openssl_sieve/2ndrun_r%d.csv", r);
+	sprintf(filename, "data/openssl_benchmark/nss_sieve/2ndrun_r%d.csv", r);
 	FILE *fd;
 	fd = fopen(filename, "w+");
 	fprintf(fd,"r, l, avgruntime\n");
