@@ -20,24 +20,25 @@ int main(int argc, char **argv){
 	int l_inc = 512;
 
 	char filename[256];
-	sprintf(filename, "data/nat_benchmark/openssl_sieve/2ndrun_r%d.csv", r);
+	sprintf(filename, "data/nat_benchmark/nss_sieve/2ndrun_r%d.csv", r);
 	FILE *fd;
 	fd = fopen(filename, "w+");
 	fprintf(fd,"r, l, avgruntime\n");
 
-	while(l<1){
-		FILE *fd_params = fopen("data/optimal_params/nat_pga/nat_k1024_r16_r8080.csv", "r");
-		int curr_r = 0;
-		int curr_t;
-		int ret;
+	FILE *fd_params = fopen("data/optimal_params/nat_pga/nat_k1024_r16_r8080.csv", "r");
+	int curr_r = 0;
+	int curr_t;
+	int ret;
+	
+	fscanf(fd_params, "%*[^\n]\n"); //skip header
+	while((ret = fscanf(fd_params, "%d, %d", &curr_r, &curr_t) != EOF) && curr_r != r){			
+		printf("%d\n", curr_r);
+	}
+	
+	t = curr_t;
+	
 		
-		fscanf(fd_params, "%*[^\n]\n"); //skip header
-		while((ret = fscanf(fd_params, "%d, %d", &curr_r, &curr_t) != EOF) && curr_r != r){			
-			printf("%d\n", curr_r);
-		}
-		
-		t = curr_t;
-		
+	while(l<=65536){
 		clock_t start, end;
 		double cpu_time_used;
 
@@ -54,7 +55,7 @@ int main(int argc, char **argv){
 		fprintf(stdout, "Test done for: r=%d, l=%d in %fs\n", r, l, cpu_time_used);
 		fprintf(fd, "%d, %d, %f\n", r, l, cpu_time_used);
 
-		if(l>0xFA00){ //64000
+		if(l>12000){
 			l_inc = 1024;
 		}
 
