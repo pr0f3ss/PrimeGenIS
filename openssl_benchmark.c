@@ -13,7 +13,7 @@ int main(int argc, char **argv){
 	// seen as set
 	int k = 1024; //bitsize
 	int t;
-	int l = 0; // max deviation
+	int l = 700; // max deviation
 
 	int r = atoi(argv[1]); // get r from program argument
 
@@ -25,25 +25,26 @@ int main(int argc, char **argv){
 	fd = fopen(filename, "w+");
 	fprintf(fd,"r, l, avgruntime\n");
 
-	while(l<1){
-		FILE *fd_params = fopen("data/optimal_params/openssl_pga/openssl_k1024_r16_r8080.csv", "r");
-		int curr_r = 0;
-		int curr_t;
-		int ret;
-		fscanf(fd_params, "%*[^\n]\n"); //skip header
-		while((ret = fscanf(fd_params, "%d, %d", &curr_r, &curr_t) != EOF) && curr_r != r){			
-			printf("%d\n", curr_r);
-		}
-		
-		t = curr_t;
+	FILE *fd_params = fopen("data/optimal_params/openssl_pga/openssl_k1024_r16_r8080.csv", "r");
+	int curr_r = 0;
+	int curr_t;
+	int ret;
+	fscanf(fd_params, "%*[^\n]\n"); //skip header
+	while((ret = fscanf(fd_params, "%d, %d", &curr_r, &curr_t) != EOF) && curr_r != r){			
+		printf("%d\n", curr_r);
+	}
+	
+	t = curr_t;
+	fclose(fd_params);
 
+	while(l<=65536){
 		clock_t start, end;
 		double cpu_time_used;
 
 		start = clock();
 
 		for(int i=0; i<8192; i++){
-			int returncode = openssl_pga(p, k, t, r, l, openssl_generate_sieve, openssl_sieve);
+			int returncode = openssl_pga(p, k, t, r, l, nss_generate_sieve, nss_sieve);
 		}
 
 		end = clock();
@@ -52,12 +53,11 @@ int main(int argc, char **argv){
 
 		fprintf(fd, "%d, %d, %f\n", r, l, cpu_time_used);
 
-		if(l>0x4000){
+		if(l>12000){
 			l_inc = 1024;
 		}
 
 		l += l_inc;
-		fclose(fd_params);
 	}	
 	
 	BN_free(p);
