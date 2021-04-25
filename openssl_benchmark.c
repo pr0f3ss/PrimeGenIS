@@ -26,14 +26,15 @@ int main(int argc, char **argv){
 	fprintf(fd,"r, l, avgruntime\n");
 
 	while(l<1){
-		FILE *fd_params = fopen("data/optimal_params/openssl_pga/openssl_k1024_r16_r8080.csv");
+		FILE *fd_params = fopen("data/optimal_params/openssl_pga/openssl_k1024_r16_r8080.csv", "r");
 		int curr_r = 0;
 		int curr_t;
-
-		while(curr_r != r){
-			fscanf(fd_params, "%d,%d", &curr_r, &curr_t);
+		int ret;
+		fscanf(fd_params, "%*[^\n]\n"); //skip header
+		while((ret = fscanf(fd_params, "%d, %d", &curr_r, &curr_t) != EOF) && curr_r != r){			
+			printf("%d\n", curr_r);
 		}
-
+		
 		t = curr_t;
 
 		clock_t start, end;
@@ -56,6 +57,7 @@ int main(int argc, char **argv){
 		}
 
 		l += l_inc;
+		fclose(fd_params);
 	}	
 	
 	BN_free(p);

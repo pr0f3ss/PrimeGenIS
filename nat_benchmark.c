@@ -3,7 +3,7 @@
 #include <time.h>
 #include <openssl/bn.h>
 #include "nat_pga.h"
-#include "nss_pga.h"
+#include "openssl_pga.h"
 
 int main(int argc, char **argv){
 
@@ -12,20 +12,31 @@ int main(int argc, char **argv){
 
 	// seen as set
 	int k = 1024; //bitsize
-	int t = 5; // MR rounds
-	int l = 40000; // max deviation
+	int t; // MR rounds
+	int l = 0; // max deviation
 
 	int r = atoi(argv[1]); // get r from program argument
 
 	int l_inc = 512;
 
 	char filename[256];
-	sprintf(filename, "data/nat_benchmark/nss_sieve/1strun_r%d.csv", r);
+	sprintf(filename, "data/nat_benchmark/openssl_sieve/2ndrun_r%d.csv", r);
 	FILE *fd;
 	fd = fopen(filename, "w+");
 	fprintf(fd,"r, l, avgruntime\n");
 
-	while(l<0x186A0){ //100'000
+	while(l<1){
+		FILE *fd_params = fopen("data/optimal_params/nat_pga/nat_k1024_r16_r8080.csv", "r");
+		int curr_r = 0;
+		int curr_t;
+		int ret;
+		
+		fscanf(fd_params, "%*[^\n]\n"); //skip header
+		while((ret = fscanf(fd_params, "%d, %d", &curr_r, &curr_t) != EOF) && curr_r != r){			
+			printf("%d\n", curr_r);
+		}
+		
+		t = curr_t;
 		
 		clock_t start, end;
 		double cpu_time_used;
@@ -33,7 +44,7 @@ int main(int argc, char **argv){
 		start = clock();
 
 		for(int i=0; i<8192; i++){
-			int returncode = nat_pga(p, k, t, r, l, nss_generate_sieve, nss_sieve);
+			int returncode = nat_pga(p, k, t, r, l, openssl_generate_sieve, openssl_sieve);
 		}
 
 		end = clock();
@@ -48,6 +59,7 @@ int main(int argc, char **argv){
 		}
 
 		l += l_inc;
+		fclose(fd_params);
 	}	
 	
 	BN_free(p);
