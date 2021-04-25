@@ -99,22 +99,23 @@ def nat_params(k, l, r):
     return t
 
 
-# test
-k = 1024
-l = 4000
-r = 1024
+if __name__ == "__main__":
+    # test
+    k = 1024
+    l = 4000
+    r = 1024
 
-# # test nss
-# U, t = nss_params(k,l,r)
-# print("NSS: U={}, t={}".format(U, t))
+    # test nss
+    # U, t = nss_params(k,l,r)
+    # print("NSS: U={}, t={}".format(U, t))
 
-# # test ossl
-# t = ossl_params(k,l,r)
-# print("OSSL: t={}".format(t))
+    # # test ossl
+    # t = ossl_params(k,l,r)
+    # print("OSSL: t={}".format(t))
 
-# # test nat
-# t = nat_params(k,64000,r) #boundary: 63,880
-# print("NAT: t={}".format(t))
+    # # test nat
+    # t = nat_params(k,64000,r) #boundary: 63,880
+    # print("NAT: t={}".format(t))
 
-U, t = nss_params(k, 700, 16)
-print("NSS: U={}, t={}".format(U, t))
+    U, t = nss_params(k, 700, 16)
+    print("NSS: U={}, t={}".format(U, t))
