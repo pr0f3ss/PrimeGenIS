@@ -28,7 +28,9 @@ int main(int argc, char **argv){
 	fprintf(fd,"r, l, avgruntime\n");
 
 	while(l<=65536){
-		FILE *fd_params = fopen("data/optimal_params/nat_pga/nat_k1024_r16_r8080.csv", "r");
+		char opt_filename[256];
+		sprintf(opt_filename, "data/optimal_params/nss_pga/nss_k1024_r%d_l700_l65536.csv", r);
+		FILE *fd_params = fopen(opt_filename, "r");
 		int curr_r = 0;
 		int curr_l = 0;
 		int curr_t;
@@ -36,7 +38,10 @@ int main(int argc, char **argv){
 		int ret;
 		
 		fscanf(fd_params, "%*[^\n]\n"); //skip header
-		while((ret = fscanf(fd_params, "%d, %d, %d, %d", &curr_r, &curr_l, &curr_u, &curr_t) != EOF) && curr_r != r && curr_l != l){			
+		while((ret = fscanf(fd_params, "%d, %d, %d, %d", &curr_r, &curr_l, &curr_u, &curr_t) != EOF)){
+			if(curr_r == r && curr_l == l){
+				break;
+			}		
 		}
 		t = curr_t;
 		u = curr_u;
@@ -48,13 +53,13 @@ int main(int argc, char **argv){
 
 		start = clock();
 
-		for(int i=0; i<8192; i++){
+		for(int i=0; i<1; i++){
 			int returncode = nss_pga(p, k, t, u, r, l, nss_generate_sieve, nss_sieve);
 		}
 
 		end = clock();
 		cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
-		cpu_time_used /= 8192.;
+		cpu_time_used /= 1.;
 
 		fprintf(fd, "%d, %d, %f\n", r, l, cpu_time_used);
 
@@ -63,7 +68,6 @@ int main(int argc, char **argv){
 		}
 
 		l += l_inc;
-		
 	}	
 	
 	BN_free(p);
