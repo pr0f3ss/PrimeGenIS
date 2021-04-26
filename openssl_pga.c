@@ -126,6 +126,7 @@ int openssl_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int
     // n0+it is now a probable prime, copy n0+it into n
     unsigned long add_value = *it;
     ret = 1;
+    *it = (*it) + 2; // increment for next run in nat and nss, not needed for openssl (but doesn't hurt as it get reinitialized to 0 after ossl iteration)
 
     if(!BN_add_word(n0, (BN_ULONG) add_value)){
         ret = -1;
