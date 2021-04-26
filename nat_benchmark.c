@@ -3,7 +3,7 @@
 #include <time.h>
 #include <openssl/bn.h>
 #include "nat_pga.h"
-#include "dirichlet_sieve.h"
+#include "openssl_pga.h"
 
 
 int main(int argc, char **argv){
@@ -21,12 +21,12 @@ int main(int argc, char **argv){
 	int l_inc = 512;
 
 	char filename[256];
-	sprintf(filename, "data/nat_benchmark/dirichlet_sieve/2ndrun_r%d.csv", r);
+	sprintf(filename, "data/nat_benchmark/openssl_sieve/2ndrun_r%d.csv", r);
 	FILE *fd;
 	fd = fopen(filename, "w+");
 	fprintf(fd,"r, l, avgruntime\n");
 
-	FILE *fd_params = fopen("data/optimal_params/nat_pga/nat_dir_k1024_r8_r100.csv", "r");
+	FILE *fd_params = fopen("data/optimal_params/nat_pga/nat_k1024_r16_r8080.csv", "r");
 	int curr_r = 0;
 	int curr_t;
 	int ret;
@@ -47,7 +47,7 @@ int main(int argc, char **argv){
 		start = clock();
 
 		for(int i=0; i<8192; i++){
-			int returncode = nat_pga(p, k, t, r, l, dirichlet_generate_sieve, dirichlet_sieve);
+			int returncode = nat_pga(p, k, t, r, l, openssl_generate_sieve, openssl_sieve);
 		}
 
 		end = clock();

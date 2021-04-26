@@ -3,7 +3,7 @@
 #include <time.h>
 #include <openssl/bn.h>
 #include "nss_pga.h"
-#include "dirichlet_sieve.h"
+#include "openssl_pga.h"
 
 int main(int argc, char **argv){
 
@@ -22,14 +22,14 @@ int main(int argc, char **argv){
 	int l_inc = 512;
 
 	char filename[256];
-	sprintf(filename, "data/nss_benchmark/dirichlet_sieve/2ndrun_r%d.csv", r);
+	sprintf(filename, "data/nss_benchmark/openssl_sieve/2ndrun_r%d.csv", r);
 	FILE *fd;
 	fd = fopen(filename, "w+");
 	fprintf(fd,"r, l, avgruntime\n");
 
 	while(l<=65536){
 		char opt_filename[256];
-		sprintf(opt_filename, "data/optimal_params/nss_pga/nss_dir_k1024_r%d_l700_l65536.csv", r);
+		sprintf(opt_filename, "data/optimal_params/nss_pga/nss_k1024_r%d_l700_l65536.csv", r);
 		FILE *fd_params = fopen(opt_filename, "r");
 		int curr_r = 0;
 		int curr_l = 0;
@@ -54,7 +54,7 @@ int main(int argc, char **argv){
 		start = clock();
 
 		for(int i=0; i<8192; i++){
-			int returncode = nss_pga(p, k, t, u, r, l, dirichlet_generate_sieve, dirichlet_sieve);
+			int returncode = nss_pga(p, k, t, u, r, l, openssl_generate_sieve, openssl_sieve);
 		}
 
 		end = clock();
