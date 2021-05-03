@@ -2,14 +2,14 @@
 #include <openssl/rand.h>
 #include <string.h>
 #include "primes.h"
-#include "openssl_pga.h"
+#include "safe_openssl_pga.h"
 
 /* 
-function: generates prime with openssl algorithm, passed on into bignum p
+function: generates safe prime with openssl algorithm, passed on into bignum p
 arguments: p = probable prime if successful, k = bit size of prime, t = # MR rounds, r = number of primes to do trial division with, l = max deviation from output prime to trial 
 returns: 1 if successful, 0 if failure, -1 if error
 */
-int openssl_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(unsigned char**, int, BIGNUM*, int), int (*sieve_algo)(unsigned char*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
+int safe_openssl_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(unsigned char**, int, BIGNUM*, int), int (*sieve_algo)(unsigned char*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
     if(!RAND_poll()){
         return -1;
     }
@@ -19,12 +19,12 @@ int openssl_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(uns
     BIGNUM *n;
 	n = BN_new();
 
-    while(ret==0){ // 0 indicates that no probable prime has been found whereas -1 indicates that some BN function raised an error
-        ret = openssl_iter(n, k, r, t, l, generate_sieve, sieve_algo);
+    while(ret==0){ // 0 indicates that no probable safe prime has been found whereas -1 indicates that some BN function raised an error
+        ret = safe_openssl_iter(n, k, r, t, l, generate_sieve, sieve_algo);
     }
 
     if(ret == 1){
-		if(!BN_copy(p, n)){ // copy value from n to p on successful prime generation
+		if(!BN_copy(p, n)){ // copy value from n to p on successful safe prime generation
             ret = -1;
         } 
 	}
@@ -41,7 +41,7 @@ arguments: p = returned prime if successfully generated, k = bit size of prime, 
 returns: 1 if successful, 0 if failure, -1 if error 
 other:  l = max deviation from initially generated num and probable prime 
 */
-int openssl_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsigned char**, int, BIGNUM*, int), int (*sieve_algo)(unsigned char*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
+int safe_openssl_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsigned char**, int, BIGNUM*, int), int (*sieve_algo)(unsigned char*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
     int ret = 0;
 
     // create buffer for internal computations
@@ -55,6 +55,10 @@ int openssl_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(un
     // initialize returned value from sieve
     BIGNUM *n;
 	n = BN_new();
+
+    // initialize bn that holds right shifted value for testing safe prime generation
+    BIGNUM *rs;
+	rs = BN_new();
 
     if(!BN_rand(n0, k, BN_RAND_TOP_TWO, BN_RAND_BOTTOM_ODD)){
         ret = -1;
@@ -81,7 +85,13 @@ int openssl_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(un
         goto free_bn_sieve;
     }
 
-    if(BN_is_prime_fasttest_ex(n, t, ctx, 0, NULL)){
+    // get rs = n>>1 to check safe prime generation (rs = (n-1)/2, -1 omitted as all primes >2 are odd)
+    if(!BN_rshift1(rs, n)){
+        ret = -1;
+        goto free_bn_sieve;
+    }
+
+    if(BN_is_prime_fasttest_ex(n, t, ctx, 0, NULL) && BN_is_prime_fasttest_ex(rs, t, ctx, 0, NULL)){
         if(!BN_copy(p, n)){ // copy value from n to p on successful prime generation
             ret = -1;
         } 
@@ -94,34 +104,34 @@ int openssl_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(un
     free_bn:
         BN_free(n0);
         BN_free(n);
+        BN_free(rs);
         BN_CTX_free(ctx);
 
     return ret;
 }
 
 /*
-function: implements the openssl sieve, if sieve[i]+it mod primes[i] == 0 then we conclude that n0+it is composite. We therefore generate trial n0 and fill the sieve according to n0.
+function: implements the openssl sieve, if sieve[i]+it mod primes[i] <= 1 then we conclude that n0+it is composite. We therefore generate trial n0 and fill the sieve according to n0.
 We then loop over all primes and check whether the previously mentioned expression (sieve[i]+it mod primes[i] == 0) equates to true. If that is the case, we must increment 'it' by 2 
 and start the loop over, now with the updated it variable.
-If n0+it overruns l (max deviation), then we retry by running 'retry' again. 
+If n0+it overruns max deviation, then we retry by running 'retry' again. 
 arguments: sieve = passed on datastructure holding the sieve values, sieve_sz = not used, n = probable prime if successful, n0 = initial sieve number aka trial, r = number of primes to do trial division with and used as sieve_sz
 returns: 1 if successful, 0 if failure , -1 if error
 */
-int openssl_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int r, unsigned long *it, int k){
+int safe_openssl_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int r, unsigned long *it, int k){
     int ret = -1;
     unsigned long max_deviation = 0xffffffffffffffffUL - primes[r-1]; // use max UL - biggest prime as boundary
     loop:
         // check if n0+it passes sieve 
         for(int i=1; i<r; i++){
-            if(((unsigned long) sieve[i] + (*it)) % primes[i]  == 0){
-                *it = (*it) + 2;
+            if(((unsigned long) sieve[i] + (*it)) % primes[i]  <= 1){
+                *it = (*it) + 4;
 
-                // if 'it' goes over max deviation value 'l' then retry with another trial n0, remember that l = sieve_sz/2
                 if(*it >= max_deviation){
                     return ret;
                 }
 
-                // If sieve[i]+it mod prime[i] == 0, then we conclude that it must be composite, therefore do loop again with updated 'it' variable.
+                // If sieve[i]+it mod prime[i] <= 1, then we conclude that it must be composite, therefore do loop again with updated 'it' variable.
                 goto loop;
             }
         }
@@ -130,7 +140,7 @@ int openssl_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int
     // n0+it is now a probable prime, copy n0+it into n
     unsigned long add_value = *it;
     ret = 1;
-    *it = (*it) + 2; // increment for next run in nat and nss, not needed for openssl (but doesn't hurt as it get reinitialized to 0 after ossl iteration)
+    *it = (*it) + 4; // increment for next run in nat and nss, not needed for openssl (but doesn't hurt as it get reinitialized to 0 after ossl iteration)
 
     if(!BN_add_word(n0, (BN_ULONG) add_value)){
         ret = -1;
@@ -149,7 +159,12 @@ arguments: sieve = passed on datastructure holding the sieve values, sieve_sz = 
 returns: 1 if successful, 0 failure, -1 if error 
 */
 
-int openssl_generate_sieve(unsigned char **sieve, int sieve_sz, BIGNUM *n0, int r){
+int safe_openssl_generate_sieve(unsigned char **sieve, int sieve_sz, BIGNUM *n0, int r){
+    // set bit at position 1 is set to 1, as else (n0+it)/2 will be even (so not safe prime)
+    if(!BN_set_bit(n0, 1)){
+        return -1;
+    }
+
     *sieve = NULL;
     *sieve = (unsigned char*) malloc(r); 
 

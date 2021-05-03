@@ -2,7 +2,7 @@
 #include <openssl/rand.h>
 #include <string.h>
 #include "primes.h"
-#include "nat_pga.h"
+#include "safe_nat_pga.h"
 
 /* 
 function: generates prime with natural algorithm, passed on into bignum p
@@ -10,7 +10,7 @@ arguments: p = probable prime if successful, k = bit size of prime, t = # MR rou
 returns: 1 if successful, 0 if failure, -1 if error
 */
 
-int nat_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(unsigned char**, int, BIGNUM*, int), int (*sieve_algo)(unsigned char*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
+int safe_nat_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(unsigned char**, int, BIGNUM*, int), int (*sieve_algo)(unsigned char*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
     if(!RAND_poll()){
         return -1;
     }
@@ -28,6 +28,10 @@ int nat_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(unsigne
     // initialize returned value from sieve
     BIGNUM *n;
 	n = BN_new();
+
+    // initialize bn that holds right shifted value for testing safe prime generation
+    BIGNUM *rs;
+	rs = BN_new();
 
     unsigned char *sieve;
     int sieve_sz = l/2;
@@ -53,7 +57,7 @@ int nat_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(unsigne
     }
 
     // pre-condition: n is odd, k-bit long
-    while(!BN_is_prime_fasttest_ex(n, t, ctx, 0, NULL)){
+    while(!BN_is_prime_fasttest_ex(n, t, ctx, 0, NULL) || !BN_is_prime_fasttest_ex(rs, t, ctx, 0, NULL)){
         
         //int nat_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int r, unsigned long *it)
         ret = sieve_algo(sieve, sieve_sz, n, n0, r, &it, k);
@@ -63,8 +67,14 @@ int nat_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(unsigne
             ret = 0;
             goto free_bn_sieve;
         }
+
+        // get rs = n>>1 to check safe prime generation (rs = (n-1)/2, -1 omitted as all primes >2 are odd)
+        if(!BN_rshift1(rs, n)){
+            ret = -1;
+            goto free_bn_sieve;
+        }
     }
-    // post-condition: n passed t MR-rounds, so probable prime 
+    // post-condition: n and (n-1)/2 passed t MR-rounds, so probable prime 
 
 	if(!BN_copy(p, n)){ // copy value from n to p on successful prime generation
         ret = -1;
@@ -76,6 +86,7 @@ int nat_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(unsigne
     free_bn:
         BN_free(n0);
         BN_free(n);
+        BN_free(rs);
         BN_CTX_free(ctx);
     
 	return ret;

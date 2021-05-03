@@ -23,7 +23,6 @@ int dirichlet_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, i
     int ret = 0;
 
     if(*it == 0){
-
         // create buffer for internal computations
         BN_CTX *ctx;
         ctx = BN_CTX_new();
@@ -55,13 +54,17 @@ int dirichlet_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, i
         // initialize bn holding remainder
         BIGNUM *rem;
         rem = BN_new();
+
+        // holds a-1 and remainder of gcd(mr, a-1)
+        BIGNUM *rem_sub;
+        rs = BN_new();
         
         if(!BN_set_word(bn_one, (BN_ULONG) 1)){ // = 1
             ret = -1;
             goto free_bn;
         }
 
-        // this do-while loop generates 'a' relatively prime to mr (gcd(mr,a) = 1)
+        // this do-while loop generates 'a' relatively prime to mr (gcd(mr,a) = 1) and also 'a-1' coprime to mr (for safe prime)
         do{
             if(!BN_rand_range(bn_a, n0)){ // generate number in [0, mr]
                 ret = -1;
@@ -73,13 +76,24 @@ int dirichlet_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, i
                 goto free_bn;
             } 
 
+            if(!BN_sub(rem_sub, bn_a, bn_one)){ // rem_sub = a - 1
+                ret = -1;
+                goto free_bn; 
+            }
+
             if(!BN_gcd(bn_gcd, n0, bn_a, ctx)){ // compute gcd(n0, bn_a)
                 ret = -1;
                 goto free_bn;
             }
-        }while(!BN_is_one(bn_gcd));
 
-        //post-cond: a is relatively prime to mr
+            if(!BN_gcd(rem_sub, n0, rem_sub, ctx)){ // compute gcd(n0, rem_sub)
+                ret = -1;
+                goto free_bn;
+            }
+
+        }while(!BN_is_one(bn_gcd) || !BN_is_one(rem_sub));
+
+        //post-cond: a and a-1 is relatively prime to mr 
 
         // set the values
         if(!BN_set_word(bn_lw, (BN_ULONG) 0)){ // = 0
@@ -157,6 +171,7 @@ int dirichlet_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, i
             BN_free(bn_up);
             BN_free(bn_shift_interval);
             BN_free(rem);
+            BN_free(rem_sub);
             BN_CTX_free(ctx);
     }else{
         ret = 1;
@@ -175,6 +190,11 @@ arguments: sieve = not used, sieve_sz = not used, n0 = mr if successful, r = num
 returns: 1 if successful, 0 if failure, -1 if error 
 */
 int dirichlet_generate_sieve(unsigned char **sieve, int sieve_sz, BIGNUM *n0, int r){
+    // set bit at position 1 is set to 1, as else (n0-1)/2 will be even (so not safe prime)
+    if(!BN_set_bit(n0, 1)){
+        return -1;
+    }
+
     int ret = 0;
     
     // allocate 1 byte s.t. we can free in any pga without issues

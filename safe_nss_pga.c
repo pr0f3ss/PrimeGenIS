@@ -2,15 +2,15 @@
 #include <openssl/rand.h>
 #include <string.h>
 #include "primes.h"
-#include "nss_pga.h"
+#include "safe_nss_pga.h"
 
 /* 
-function: generates prime with nss method, passed on into bignum p
+function: generates safe prime with nss method, passed on into bignum p
 arguments: p = probable prime if successful, k = bit size of prime, t = # MR rounds, u = # max nss_iter rounds, r = number of primes to do trial division with, l = max deviation from output prime to trial 
 returns: 1 if successful, 0 if failure, -1 if error
 */
 
-int nss_pga(BIGNUM *p, int k, int t, int u, int r, int l, int (*generate_sieve)(unsigned char**, int, BIGNUM*, int), int (*sieve_algo)(unsigned char*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
+int safe_nss_pga(BIGNUM *p, int k, int t, int u, int r, int l, int (*generate_sieve)(unsigned char**, int, BIGNUM*, int), int (*sieve_algo)(unsigned char*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
 	if(!RAND_poll()){
         return -1;
     }
@@ -21,9 +21,9 @@ int nss_pga(BIGNUM *p, int k, int t, int u, int r, int l, int (*generate_sieve)(
 	int ret = -1; // return code of nss_iter
 	int j = 0; // iteration var
 
-	// tries at most u nss_iter steps
+	// tries at most u safe_nss_iter steps
 	while(ret != 1 && j < u){
-		ret = nss_iter(n, k, r, t, l, generate_sieve, sieve_algo);
+		ret = safe_nss_iter(n, k, r, t, l, generate_sieve, sieve_algo);
 		j+=1;
 	}
 
@@ -46,7 +46,7 @@ returns: 1 if successful, 0 if failure, -1 if error (sieve generation)
 other:  l = max deviation from initially generated num and probable prime 
 */
 
-int nss_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsigned char**, int, BIGNUM*, int), int (*sieve_algo)(unsigned char*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
+int safe_nss_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsigned char**, int, BIGNUM*, int), int (*sieve_algo)(unsigned char*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
 	int ret = 0; // return code of nss_iter
 
 	// create buffer for internal computations
@@ -60,6 +60,10 @@ int nss_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsign
 	// p is going to copy from this var on success
 	BIGNUM *n;
 	n = BN_new();
+
+    // initialize bn that holds right shifted value for testing safe prime generation
+    BIGNUM *rs;
+	rs = BN_new();
 
 	// rem represents the remainder, used as an exit condition if n deviates too much from n0 (captured in l)
 	BIGNUM *rem;
@@ -105,7 +109,13 @@ int nss_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsign
 			goto free_bn_sieve;
 		}
 
-	}while(!BN_is_prime_fasttest_ex(n, t, ctx, 0, NULL)); // signature: int BN_is_prime_fasttest_ex(const BIGNUM *p, int nchecks, BN_CTX *ctx, int do_trial_division, BN_GENCB *cb);
+        // get rs = n>>1 to check safe prime generation (rs = (n-1)/2, -1 omitted as all primes >2 are odd)
+        if(!BN_rshift1(rs, n)){
+            ret = -1;
+            goto free_bn_sieve;
+        }
+
+	}while(!BN_is_prime_fasttest_ex(n, t, ctx, 0, NULL) || !BN_is_prime_fasttest_ex(rs, t, ctx, 0, NULL)); // signature: int BN_is_prime_fasttest_ex(const BIGNUM *p, int nchecks, BN_CTX *ctx, int do_trial_division, BN_GENCB *cb);
 
 	// post-condition: ret = 1, n passed t MR-rounds and n-n0 < l
 
@@ -114,10 +124,11 @@ int nss_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsign
 	} 
 
 	free_bn_sieve:
-			free(sieve);
+		free(sieve);
 	free_bn:
 		BN_free(n);
 		BN_free(n0);
+        BN_free(rs);
 		BN_free(rem);
 		BN_free(bn_l);
 		BN_CTX_free(ctx);
@@ -127,13 +138,13 @@ int nss_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsign
 
 
 /*
-function: implements the nss sieve, if sieve[i] is non-zero then (n0+2*i) is composite. We traverse the sieve until we find entry i, s.t. sieve[i] = 0. This means that n0+2*i did not fail in our sieve
+function: implements the nss sieve, if sieve[i] is non-zero then (n0+2*i) or ((n0-1)+2*i) is composite. We traverse the sieve until we find entry i, s.t. sieve[i] = 0. This means that n0+2*i did not fail in our sieve
 and did not get detected as a composite yet. We set n = n0+2*i and return a success. In the case we go over sieve_sz, we return failure.
 arguments: ieve = passed on datastructure holding the sieve values, sieve_sz = size of the sieve, n = probable prime if successful, n0 = initial sieve number aka trial, r = number of primes to do trial division with
 returns: 1 if successful, 0 if failure, -1 if error 
 */
 
-int nss_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int r, unsigned long *it, int k){
+int safe_nss_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int r, unsigned long *it, int k){
 	int ret = 0;
 
 	// if we overrun sieve array, return failure
@@ -187,7 +198,12 @@ arguments: sieve = passed on datastructure holding the sieve values, sieve_sz = 
 returns: 1 if successful, 0 if error 
 */
 
-int nss_generate_sieve(unsigned char **sieve, int sieve_sz, BIGNUM *n0, int r){
+int safe_nss_generate_sieve(unsigned char **sieve, int sieve_sz, BIGNUM *n0, int r){
+    // set bit at position 1 is set to 1, as else (n0+it)/2 will be even (so not safe prime)
+    if(!BN_set_bit(n0, 1)){
+        return -1;
+    }
+
 	int ret = 0;
 	unsigned long offset;
 
@@ -227,12 +243,17 @@ int nss_generate_sieve(unsigned char **sieve, int sieve_sz, BIGNUM *n0, int r){
 			goto free_bn;
 		}
 
-		if(BN_is_zero(rem)){
+		if(BN_is_zero(rem) || BN_is_one(rem)){ // n0 or n0-1 divisible by prime[i] (keep in mind that n0 is odd)
 			offset = 0;
 		}else{
-			offset = current_prime - BN_get_word(rem);
+			offset = current_prime - BN_get_word(rem); // n0 + (prime[i] - rem) OR (n0-1) + (prime[i] - rem) divible by prime[i]
 		}
 
+        /*
+         sieve[i] being non-zero means that n0+2*i or (n0-1)+2*i is composite. 
+         This is because offset calculates the nearest divisible number by prime[i]
+         and sets all consecuent additions of prime[i] as divisible as well.
+        */
 		for(int idx = offset; idx < 2 * sieve_sz; idx += current_prime){
 			if( idx % 2 == 0){
 				(*sieve)[idx/2] = 1;
