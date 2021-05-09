@@ -10,7 +10,7 @@ arguments: p = probable prime if successful, k = bit size of prime, t = # MR rou
 returns: 1 if successful, 0 if failure, -1 if error
 */
 
-int safe_nss_pga(BIGNUM *p, int k, int t, int u, int r, int l, int (*generate_sieve)(unsigned char**, int, BIGNUM*, int), int (*sieve_algo)(unsigned char*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
+int safe_nss_pga(BIGNUM *p, int k, int t, int u, int r, int l, int (*generate_sieve)(unsigned short**, int, BIGNUM*, int), int (*sieve_algo)(unsigned short*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
 	if(!RAND_poll()){
         return -1;
     }
@@ -46,7 +46,7 @@ returns: 1 if successful, 0 if failure, -1 if error (sieve generation)
 other:  l = max deviation from initially generated num and probable prime 
 */
 
-int safe_nss_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsigned char**, int, BIGNUM*, int), int (*sieve_algo)(unsigned char*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
+int safe_nss_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsigned short**, int, BIGNUM*, int), int (*sieve_algo)(unsigned short*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
 	int ret = 0; // return code of nss_iter
 
 	// create buffer for internal computations
@@ -80,7 +80,7 @@ int safe_nss_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(u
 
 	/* ========= SIEVE GENERATION SECTION ============= */
 
-	unsigned char *sieve;
+	unsigned short *sieve;
 	int sieve_sz = l/2;
 
 	// generate sieve for nss_sieve method
@@ -144,7 +144,7 @@ arguments: ieve = passed on datastructure holding the sieve values, sieve_sz = s
 returns: 1 if successful, 0 if failure, -1 if error 
 */
 
-int safe_nss_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int r, unsigned long *it, int k){
+int safe_nss_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int r, unsigned long *it, int k){
 	int ret = 0;
 
 	// if we overrun sieve array, return failure
@@ -198,7 +198,7 @@ arguments: sieve = passed on datastructure holding the sieve values, sieve_sz = 
 returns: 1 if successful, 0 if error 
 */
 
-int safe_nss_generate_sieve(unsigned char **sieve, int sieve_sz, BIGNUM *n0, int r){
+int safe_nss_generate_sieve(unsigned short **sieve, int sieve_sz, BIGNUM *n0, int r){
     // set bit at position 1 is set to 1, as else (n0+it)/2 will be even (so not safe prime)
     if(!BN_set_bit(n0, 1)){
         return -1;
@@ -209,7 +209,7 @@ int safe_nss_generate_sieve(unsigned char **sieve, int sieve_sz, BIGNUM *n0, int
 
 	// initialize sieve
 	*sieve = NULL;
-    *sieve = (unsigned char*) malloc(sieve_sz); 
+    *sieve = (unsigned short*) malloc(sieve_sz); 
 
     if(*sieve == NULL){
         return -1;

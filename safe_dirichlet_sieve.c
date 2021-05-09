@@ -19,7 +19,7 @@ arguments: sieve = not used, sieve_sz = not used, n {returned if success} = z*mr
 returns: 1 if successful, 0 if failure, -1 if error 
 */
 
-int dirichlet_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int r, unsigned long *it, int k){
+int dirichlet_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int r, unsigned long *it, int k){
     int ret = 0;
 
     if(*it == 0){
@@ -189,7 +189,7 @@ function: calculates mr for usage in the dirichlet sieve
 arguments: sieve = not used, sieve_sz = not used, n0 = mr if successful, r = number of primes to do trial division with 
 returns: 1 if successful, 0 if failure, -1 if error 
 */
-int dirichlet_generate_sieve(unsigned char **sieve, int sieve_sz, BIGNUM *n0, int r){
+int dirichlet_generate_sieve(unsigned short **sieve, int sieve_sz, BIGNUM *n0, int r){
     // set bit at position 1 is set to 1, as else (n0-1)/2 will be even (so not safe prime)
     if(!BN_set_bit(n0, 1)){
         return -1;
@@ -199,7 +199,7 @@ int dirichlet_generate_sieve(unsigned char **sieve, int sieve_sz, BIGNUM *n0, in
     
     // allocate 1 byte s.t. we can free in any pga without issues
     *sieve = NULL;
-    *sieve = (unsigned char*) malloc(1); 
+    *sieve = (unsigned short*) malloc(1); 
 
     if(*sieve == NULL){
         return -1;

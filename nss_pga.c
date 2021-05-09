@@ -10,7 +10,7 @@ arguments: p = probable prime if successful, k = bit size of prime, t = # MR rou
 returns: 1 if successful, 0 if failure, -1 if error
 */
 
-int nss_pga(BIGNUM *p, int k, int t, int u, int r, int l, int (*generate_sieve)(unsigned char**, int, BIGNUM*, int), int (*sieve_algo)(unsigned char*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
+int nss_pga(BIGNUM *p, int k, int t, int u, int r, int l, int (*generate_sieve)(unsigned short**, int, BIGNUM*, int), int (*sieve_algo)(unsigned short*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
 	if(!RAND_poll()){
         return -1;
     }
@@ -46,7 +46,7 @@ returns: 1 if successful, 0 if failure, -1 if error (sieve generation)
 other:  l = max deviation from initially generated num and probable prime 
 */
 
-int nss_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsigned char**, int, BIGNUM*, int), int (*sieve_algo)(unsigned char*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
+int nss_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsigned short**, int, BIGNUM*, int), int (*sieve_algo)(unsigned short*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
 	int ret = 0; // return code of nss_iter
 
 	// create buffer for internal computations
@@ -76,7 +76,7 @@ int nss_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsign
 
 	/* ========= SIEVE GENERATION SECTION ============= */
 
-	unsigned char *sieve;
+	unsigned short *sieve;
 	int sieve_sz = l/2;
 
 	// generate sieve for nss_sieve method
@@ -133,7 +133,7 @@ arguments: ieve = passed on datastructure holding the sieve values, sieve_sz = s
 returns: 1 if successful, 0 if failure, -1 if error 
 */
 
-int nss_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int r, unsigned long *it, int k){
+int nss_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int r, unsigned long *it, int k){
 	int ret = 0;
 
 	// if we overrun sieve array, return failure
@@ -187,13 +187,13 @@ arguments: sieve = passed on datastructure holding the sieve values, sieve_sz = 
 returns: 1 if successful, 0 if error 
 */
 
-int nss_generate_sieve(unsigned char **sieve, int sieve_sz, BIGNUM *n0, int r){
+int nss_generate_sieve(unsigned short **sieve, int sieve_sz, BIGNUM *n0, int r){
 	int ret = 0;
 	unsigned long offset;
 
 	// initialize sieve
 	*sieve = NULL;
-    *sieve = (unsigned char*) malloc(sieve_sz); 
+    *sieve = (unsigned short*) malloc(sieve_sz); 
 
     if(*sieve == NULL){
         return -1;

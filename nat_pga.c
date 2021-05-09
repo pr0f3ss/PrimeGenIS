@@ -10,7 +10,7 @@ arguments: p = probable prime if successful, k = bit size of prime, t = # MR rou
 returns: 1 if successful, 0 if failure, -1 if error
 */
 
-int nat_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(unsigned char**, int, BIGNUM*, int), int (*sieve_algo)(unsigned char*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
+int nat_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(unsigned short**, int, BIGNUM*, int), int (*sieve_algo)(unsigned short*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
     if(!RAND_poll()){
         return -1;
     }
@@ -29,7 +29,7 @@ int nat_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(unsigne
     BIGNUM *n;
 	n = BN_new();
 
-    unsigned char *sieve;
+    unsigned short *sieve;
     int sieve_sz = l/2;
 
     if(!BN_rand(n0, k, BN_RAND_TOP_TWO, BN_RAND_BOTTOM_ODD)){
@@ -55,7 +55,6 @@ int nat_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(unsigne
     // pre-condition: n is odd, k-bit long
     while(!BN_is_prime_fasttest_ex(n, t, ctx, 0, NULL)){
         
-        //int nat_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int r, unsigned long *it)
         ret = sieve_algo(sieve, sieve_sz, n, n0, r, &it, k);
         
         // check bit length of returned n

@@ -9,7 +9,7 @@ function: generates prime with openssl algorithm, passed on into bignum p
 arguments: p = probable prime if successful, k = bit size of prime, t = # MR rounds, r = number of primes to do trial division with, l = max deviation from output prime to trial 
 returns: 1 if successful, 0 if failure, -1 if error
 */
-int openssl_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(unsigned char**, int, BIGNUM*, int), int (*sieve_algo)(unsigned char*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
+int openssl_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(unsigned short**, int, BIGNUM*, int), int (*sieve_algo)(unsigned short*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
     if(!RAND_poll()){
         return -1;
     }
@@ -41,7 +41,7 @@ arguments: p = returned prime if successfully generated, k = bit size of prime, 
 returns: 1 if successful, 0 if failure, -1 if error 
 other:  l = max deviation from initially generated num and probable prime 
 */
-int openssl_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsigned char**, int, BIGNUM*, int), int (*sieve_algo)(unsigned char*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
+int openssl_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsigned short**, int, BIGNUM*, int), int (*sieve_algo)(unsigned short*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
     int ret = 0;
 
     // create buffer for internal computations
@@ -62,7 +62,7 @@ int openssl_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(un
     }
 
     /* ========= SIEVE GENERATION SECTION ============= */
-    unsigned char *sieve;
+    unsigned short *sieve;
 	int sieve_sz = l/2;
 
     if(!generate_sieve(&sieve, sieve_sz, n0, r)){
@@ -107,7 +107,7 @@ If n0+it overruns l (max deviation), then we retry by running 'retry' again.
 arguments: sieve = passed on datastructure holding the sieve values, sieve_sz = not used, n = probable prime if successful, n0 = initial sieve number aka trial, r = number of primes to do trial division with and used as sieve_sz
 returns: 1 if successful, 0 if failure , -1 if error
 */
-int openssl_sieve(unsigned char *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int r, unsigned long *it, int k){
+int openssl_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int r, unsigned long *it, int k){
     int ret = -1;
     unsigned long max_deviation = 0xffffffffffffffffUL - primes[r-1]; // use max UL - biggest prime as boundary
     loop:
@@ -149,9 +149,9 @@ arguments: sieve = passed on datastructure holding the sieve values, sieve_sz = 
 returns: 1 if successful, 0 failure, -1 if error 
 */
 
-int openssl_generate_sieve(unsigned char **sieve, int sieve_sz, BIGNUM *n0, int r){
+int openssl_generate_sieve(unsigned short **sieve, int sieve_sz, BIGNUM *n0, int r){
     *sieve = NULL;
-    *sieve = (unsigned char*) malloc(r); 
+    *sieve = (unsigned short*) malloc(r); 
 
     if(*sieve == NULL){
         return -1;
@@ -162,7 +162,7 @@ int openssl_generate_sieve(unsigned char **sieve, int sieve_sz, BIGNUM *n0, int 
         if(mod == (BN_ULONG) -1){
             return 0;
         }
-        (*sieve)[i] = (unsigned char) mod;
+        (*sieve)[i] = (unsigned short) mod;
     }
 
     return 1;
