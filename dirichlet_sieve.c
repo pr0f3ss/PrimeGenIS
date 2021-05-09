@@ -61,14 +61,19 @@ int dirichlet_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, 
             goto free_bn;
         }
 
-        // this do-while loop generates 'a' relatively prime to mr (gcd(mr,a) = 1)
+        // this do-while loop generates 'a' in [1,mr-1] relatively prime to mr (gcd(mr,a) = 1)
         do{
-            if(!BN_rand_range(bn_a, n0)){ // generate number in [0, mr]
+            if(!BN_sub(bn_lw, n0, bn_one)){ // use bn_lw to hold mr-1
+                ret = -1;
+                goto free_bn;
+            } 
+
+            if(!BN_rand_range(bn_a, bn_lw)){ // generate number in [0, mr-2]
                 ret = -1;
                 goto free_bn;
             }
             
-            if(!BN_add(bn_a, bn_a, bn_one)){ // bn_a in [1, mr+1]
+            if(!BN_add(bn_a, bn_a, bn_one)){ // bn_a in [1, mr-1]
                 ret = -1;
                 goto free_bn;
             } 
@@ -79,13 +84,14 @@ int dirichlet_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, 
             }
         }while(!BN_is_one(bn_gcd));
 
-        //post-cond: a is relatively prime to mr
+        //post-cond: 1 <= 'a' < mr is relatively prime to mr
 
         // set the values
-        if(!BN_set_word(bn_lw, (BN_ULONG) 0)){ // = 0
+        if(!BN_set_word(bn_lw, (BN_ULONG) 0)){ // reset bn_lw to = 0
             ret = -1;
             goto free_bn;
         }
+
         if(!BN_set_bit(bn_lw, (k-1))){ // = 2^(k-1)
             ret = -1;
             goto free_bn;
