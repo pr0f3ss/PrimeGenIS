@@ -185,7 +185,7 @@ int dirichlet_generate_sieve(unsigned short **sieve, int sieve_sz, BIGNUM *n0, i
     
     // allocate 1 byte s.t. we can free in any pga without issues
     *sieve = NULL;
-    *sieve = (unsigned short*) malloc(1); 
+    *sieve = (unsigned short*) malloc(sizeof(short)*1); 
 
     if(*sieve == NULL){
         return -1;

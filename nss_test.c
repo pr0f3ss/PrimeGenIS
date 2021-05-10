@@ -16,9 +16,9 @@ int main(){
 	int u = 2;
 	int t = 5; 
 
-	for(int i=0; i<1000000; i++){
+	for(int i=0; i<10; i++){
 		//int nss_pga(BIGNUM *p, int k, int t, int u, int r, int l);
-		int returncode = nss_pga(p, 1024, t, u, 1024, l, openssl_generate_sieve, openssl_sieve);
+		int returncode = nss_pga(p, 1024, t, u, 1024, l, nss_generate_sieve, nss_sieve);
 
 		printf("returncode: %d\n", returncode);
 

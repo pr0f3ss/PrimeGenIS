@@ -18,7 +18,7 @@ arguments: sieve = not used, sieve_sz = not used, n {returned if success} = z*mr
 returns: 1 if successful, 0 if failure, -1 if error 
 */
 
-int dirichlet_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int r, unsigned long *it, int k){
+int safe_dirichlet_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int r, unsigned long *it, int k){
     int ret = 0;
 
     if(*it == 0){
@@ -60,7 +60,7 @@ int dirichlet_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, 
 
         // holds remainder of gcd(mr, (a-1)/2)
         BIGNUM *rem_sub;
-        rs = BN_new();
+        rem_sub = BN_new();
         
         if(!BN_set_word(bn_one, (BN_ULONG) 1)){ // = 1
             ret = -1;
@@ -96,7 +96,7 @@ int dirichlet_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, 
             // if a is odd then right shifting by 1 is equivalent to subtracting 1 and right shifting by 1
             if(!BN_rshift1(rem_sub, bn_a)){
                 ret = -1;
-                goto free_bn_sieve;
+                goto free_bn;
             }
 
             if(!BN_gcd(bn_gcd, n0, bn_a, ctx)){ // compute gcd(n0, bn_a)
@@ -225,12 +225,12 @@ function: calculates mr for usage in the dirichlet sieve
 arguments: sieve = not used, sieve_sz = not used, n0 = mr if successful, r = number of primes to do trial division with 
 returns: 1 if successful, 0 if failure, -1 if error 
 */
-int dirichlet_generate_sieve(unsigned short **sieve, int sieve_sz, BIGNUM *n0, int r){
+int safe_dirichlet_generate_sieve(unsigned short **sieve, int sieve_sz, BIGNUM *n0, int r){
     int ret = 0;
     
     // allocate 1 byte s.t. we can free in any pga without issues
     *sieve = NULL;
-    *sieve = (unsigned short*) malloc(1); 
+    *sieve = (unsigned short*) malloc(sizeof(short)*1); 
 
     if(*sieve == NULL){
         return -1;

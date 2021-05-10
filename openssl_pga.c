@@ -10,10 +10,6 @@ arguments: p = probable prime if successful, k = bit size of prime, t = # MR rou
 returns: 1 if successful, 0 if failure, -1 if error
 */
 int openssl_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(unsigned short**, int, BIGNUM*, int), int (*sieve_algo)(unsigned short*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
-    if(!RAND_poll()){
-        return -1;
-    }
-    
     int ret = 0;
     
     BIGNUM *n;
@@ -151,7 +147,7 @@ returns: 1 if successful, 0 failure, -1 if error
 
 int openssl_generate_sieve(unsigned short **sieve, int sieve_sz, BIGNUM *n0, int r){
     *sieve = NULL;
-    *sieve = (unsigned short*) malloc(r); 
+    *sieve = (unsigned short*) malloc(sizeof(short)*r); 
 
     if(*sieve == NULL){
         return -1;
