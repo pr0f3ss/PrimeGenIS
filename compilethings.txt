@@ -1,6 +1,6 @@
 gcc -std=gnu99 -I/usr/compilelibs/openssl/include -L/usr/compilelibs/openssl/lib -Wl,-rpath=/usr/compilelibs/openssl/lib safe_tests.c safe_openssl_pga.c -lcrypto -o executabletest -O3
 
 
-gcc -std=gnu99 -I/cluster/home/dofilip/openssl/include -L/cluster/home/dofilip/openssl/lib -Wl,-rpath=/cluster/home/dofilip/openssl/lib openssl_benchmark.c openssl_pga.c -lcrypto -o openssl_openssl_exec -O3
+gcc -std=gnu99 -I/cluster/home/dofilip/openssl/include -L/cluster/home/dofilip/openssl/lib -Wl,-rpath=/cluster/home/dofilip/openssl/lib distribution_check.c openssl_pga.c -lcrypto -o dist_openssl_exec -O3
 
 
