@@ -165,8 +165,8 @@ int safe_nss_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, i
 	(*it)++;
 
 	// Precondition: sieve[*it] = 0 and *it < sieve_sz
-	// n = n0+2*(*it) as we know that it passed our sieve
-	unsigned long add_value = 2 * deref;
+	// n = n0+4*(*it) as we know that it passed our sieve
+	unsigned long add_value = 4 * deref;
 
 	BIGNUM *add_bn;
 	add_bn = BN_new();
@@ -246,19 +246,29 @@ int safe_nss_generate_sieve(unsigned short **sieve, int sieve_sz, BIGNUM *n0, in
 		if(BN_is_zero(rem) || BN_is_one(rem)){ // n0 or n0-1 divisible by prime[i] (keep in mind that n0 is odd)
 			offset = 0;
 		}else{
-			offset = current_prime - BN_get_word(rem); // n0 + (prime[i] - rem) OR (n0-1) + (prime[i] - rem) divible by prime[i]
+			offset = current_prime - BN_get_word(rem); // n0 + (prime[i] - rem) divible by prime[i]
 		}
 
         /*
-         sieve[i] being non-zero means that n0+2*i or (n0-1)+2*i is composite. 
+         sieve[i] being non-zero means that n0+4*i or (n0-1)+4*i is composite. 
          This is because offset calculates the nearest divisible number by prime[i]
          and sets all consecuent additions of prime[i] as divisible as well.
         */
-		for(int idx = offset; idx < 2 * sieve_sz; idx += current_prime){
-			if( idx % 2 == 0){
-				(*sieve)[idx/2] = 1;
+		for(int idx = offset; idx < 4 * sieve_sz; idx += current_prime){
+			if( idx % 4 == 0){
+				(*sieve)[idx/4] = 1;
 			}
 		}
+		
+		// if remainder isn't 0 or 1, we can rule out both n0 + (prime[i] - rem) (as done above) and now (n0-1) + (prime[i] - rem + 1) 
+		if(offset != 0){
+			for(int idx = offset+1; idx < 4 * sieve_sz; idx += current_prime){
+				if( idx % 4 == 0){
+					(*sieve)[idx/4] = 1;
+				}
+			}
+		}
+
 	}
 
 	ret = 1;

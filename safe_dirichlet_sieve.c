@@ -5,15 +5,14 @@
 #include "dirichlet_sieve.h"
 
 /*
-function: implements the dirichlet sieve, where if it=0 outputs n = z*mr + a where n in [2^(k-1), 2^k - 1], else outputs n = n+mr (n+n0)
+function: implements the safe Dirichlet sieve, where if it=0 outputs n = z*mr + a where n in [2^(k-1), 2^k - 1], else outputs n = n+mr (n+n0)
+The safe implementation differs in the fact that z must be even. Additionally 'a' must be in [2,mr-1], odd and coprime to mr. (a-1)/2 must be corpime to mr.
 
-z*mr+a in [2^(k-1), 2^k -1]
-z*mr in [2^(k-1)-a, 2^k -(a+1)] where all interval values are divisible by mr
+n = z*mr+a in [2^(k-1), 2^k -1], z = 2*u
+n = u*mr in [(2^(k-1)-a)/2, (2^k -(a+1))/2] where all interval values are divisible by mr
 
-bn_rand_range(n0, (2^k - (2^(k-1) + 1))
-n0 + 2^(k-1)-a
-=> z in [2^(k-1)-a / mr, 2^k -(a+1) / mr]
-=> z*mr+a in [2^(k-1), 2^k-1]
+We therefore generate a number in the above interval and check for divisibility by mr. If it isn't divisible, shift to the next divisible number by mr.
+As bn_rand_range only generates numbers in [0, x-1], we must apply some transformations to return numbers from our desired interval. 
 
 arguments: sieve = not used, sieve_sz = not used, n {returned if success} = z*mr+1 or n=n+mr (when it!=0) , n0 = mr (product of first r odd primes), r = number of primes to do trial division with, it = iterator variable, k = bitsize
 returns: 1 if successful, 0 if failure, -1 if error 
@@ -30,6 +29,10 @@ int dirichlet_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, 
         // initialize constant '1'
         BIGNUM *bn_one;
         bn_one = BN_new();
+
+        // initialize constant '2'
+        BIGNUM *bn_two;
+        bn_two = BN_new();
 
         // initialize a
         BIGNUM *bn_a;
@@ -55,7 +58,7 @@ int dirichlet_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, 
         BIGNUM *rem;
         rem = BN_new();
 
-        // holds a-1 and remainder of gcd(mr, a-1)
+        // holds remainder of gcd(mr, (a-1)/2)
         BIGNUM *rem_sub;
         rs = BN_new();
         
@@ -64,21 +67,36 @@ int dirichlet_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, 
             goto free_bn;
         }
 
-        // this do-while loop generates 'a' relatively prime to mr (gcd(mr,a) = 1) and also 'a-1' coprime to mr (for safe prime)
+        if(!BN_set_word(bn_two, (BN_ULONG) 2)){ // = 2
+            ret = -1;
+            goto free_bn;
+        }
+
+        // this do-while loop generates odd 'a' in [2,mr-1] relatively prime to mr (gcd(mr,a) = 1) where additionally (a-1)/2 coprime to mr
         do{
-            if(!BN_rand_range(bn_a, n0)){ // generate number in [0, mr]
-                ret = -1;
-                goto free_bn;
-            }
-            
-            if(!BN_add(bn_a, bn_a, bn_one)){ // bn_a in [1, mr+1]
+            if(!BN_sub(bn_lw, n0, bn_two)){ // use bn_lw to hold mr-2
                 ret = -1;
                 goto free_bn;
             } 
 
-            if(!BN_sub(rem_sub, bn_a, bn_one)){ // rem_sub = a - 1
+            do{
+                if(!BN_rand_range(bn_a, bn_lw)){ // generate number in [0, mr-3]
+                    ret = -1;
+                    goto free_bn;
+                }
+            
+                if(!BN_add(bn_a, bn_a, bn_two)){ // bn_a in [2, mr-1]
+                    ret = -1;
+                    goto free_bn;
+                }
+            }while(!BN_is_odd(bn_a));
+
+            // postcondition: 'a' odd in [2, mr-1]
+
+            // if a is odd then right shifting by 1 is equivalent to subtracting 1 and right shifting by 1
+            if(!BN_rshift1(rem_sub, bn_a)){
                 ret = -1;
-                goto free_bn; 
+                goto free_bn_sieve;
             }
 
             if(!BN_gcd(bn_gcd, n0, bn_a, ctx)){ // compute gcd(n0, bn_a)
@@ -91,21 +109,27 @@ int dirichlet_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, 
                 goto free_bn;
             }
 
-        }while(!BN_is_one(bn_gcd) || !BN_is_one(rem_sub));
+        }while(!BN_is_one(bn_gcd) || !BN_is_one(rem_sub)); // check gcd values
 
-        //post-cond: a and a-1 is relatively prime to mr 
+        //post-cond: 2 <= a < mr and (a-1)/2 is relatively prime to mr, 'a' odd
 
         // set the values
-        if(!BN_set_word(bn_lw, (BN_ULONG) 0)){ // = 0
+        if(!BN_set_word(bn_lw, (BN_ULONG) 0)){ // reset bn_lw to 0
             ret = -1;
             goto free_bn;
         }
+
         if(!BN_set_bit(bn_lw, (k-1))){ // = 2^(k-1)
             ret = -1;
             goto free_bn;
         }
 
-        if(!BN_sub(bn_shift_interval, bn_lw, bn_a)){ // = 2^(k-1) - a
+        if(!BN_sub(bn_shift_interval, bn_lw, bn_a)){ // = 2^(k-1) - a, note: this number is always odd
+            ret = -1;
+            goto free_bn;
+        }
+
+        if(!BN_rshift1(bn_shift_interval, bn_shift_interval)){ // = (2^(k-1) - a)/2
             ret = -1;
             goto free_bn;
         } 
@@ -114,35 +138,40 @@ int dirichlet_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, 
             ret = -1;
             goto free_bn;
         }
-
         
         if(!BN_set_word(bn_up, (BN_ULONG) 0)){ // = 0
             ret = -1;
             goto free_bn;
         }
+
         if(!BN_set_bit(bn_up, k)){ // = 2^k
             ret = -1;
             goto free_bn;
         }
 
-        if(!BN_sub(bn_up, bn_up, bn_lw)){ // = (2^k - (2^(k-1) + 1))
+        if(!BN_sub(bn_up, bn_up, bn_lw)){ // = 2^k - (2^(k-1) + 1)
+            ret = -1;
+            goto free_bn;
+        }
+
+        if(!BN_rshift1(bn_up, bn_up)){ // = (2^k - (2^(k-1) + 1)) / 2
             ret = -1;
             goto free_bn;
         } 
 
-        if(!BN_rand_range(n, bn_up)){ // generate number in [0, (2^k - (2^(k-1) + 1)]
+        if(!BN_rand_range(n, bn_up)){ // generate number in [0, (2^k - (2^(k-1) + 1)) / 2]
             ret = -1;
             goto free_bn;
         }
 
-        // precondition: n is out of interval [0, (2^k - (2^(k-1) + 1)]
+        // precondition: n is out of interval [0, (2^k - (2^(k-1) + 1 + a)) / 2]
 
-        if(!BN_add(n, n, bn_shift_interval)){ // shift the interval from [0, (2^k - (2^(k-1) + 1)] to [2^(k-1) - a, 2^k - (a+1)]
+        if(!BN_add(n, n, bn_shift_interval)){ // shift the interval from [0, (2^k - (2^(k-1) + 1)) / 2] to [(2^(k-1) - a) / 2, (2^k - 1 - a) / 2]
             ret = -1;
             goto free_bn;
         }
 
-        if(!BN_mod(rem, n, n0, ctx)){ // get remainder of n/mr, s.t. we have a z for which holds: n = z*mr
+        if(!BN_mod(rem, n, n0, ctx)){ // get remainder of n/mr, s.t. we have a u for which holds: n = u*mr
             ret = -1;
             goto free_bn;
         }
@@ -152,9 +181,15 @@ int dirichlet_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, 
             goto free_bn;
         }
 
-        // postcondition: n is out of interval [2^(k-1) - a, 2^k - (a+1)] AND n is divisible by mr which implies n = z*mr for some z
+        // postcondition: n is out of interval [(2^(k-1) - a) / 2, (2^k - 1 - a) / 2] AND n is divisible by mr which implies n = u*mr for some u
 
-        if(!BN_add(n, n, bn_a)){ // construct n = z*mr + a
+        // we now multiply by 2 to retrieve: n = 2*u*mr = z*mr in [(2^(k-1) - a), (2^k - 1 - a)]
+        if(!BN_lshift1(n, n)){
+            ret = -1;
+            goto free_bn;
+        }
+
+        if(!BN_add(n, n, bn_a)){ // construct n = z*mr + a, with z = 2*u
             ret = -1;
             goto free_bn;
         }
@@ -165,6 +200,7 @@ int dirichlet_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, 
         // free all bignums used
         free_bn:
             BN_free(bn_one);
+            BN_free(bn_two);
             BN_free(bn_a);
             BN_free(bn_gcd);
             BN_free(bn_lw);
@@ -190,11 +226,6 @@ arguments: sieve = not used, sieve_sz = not used, n0 = mr if successful, r = num
 returns: 1 if successful, 0 if failure, -1 if error 
 */
 int dirichlet_generate_sieve(unsigned short **sieve, int sieve_sz, BIGNUM *n0, int r){
-    // set bit at position 1 is set to 1, as else (n0-1)/2 will be even (so not safe prime)
-    if(!BN_set_bit(n0, 1)){
-        return -1;
-    }
-
     int ret = 0;
     
     // allocate 1 byte s.t. we can free in any pga without issues
