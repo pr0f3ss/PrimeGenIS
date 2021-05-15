@@ -40,7 +40,7 @@ int main(int argc, char **argv){
 	unsigned char * buffer = malloc(128 * sizeof(unsigned char)); //k=1024
 	for(int i=0; i<32000; i++){
 
-        	int returncode = openssl_pga(p, k, t, r, l, openssl_generate_sieve, openssl_sieve);
+        int returncode = openssl_pga(p, k, t, r, l, openssl_generate_sieve, openssl_sieve);
 	
    		int len = BN_bn2bin(p, buffer);
 		unsigned char last_byte = buffer[0];
