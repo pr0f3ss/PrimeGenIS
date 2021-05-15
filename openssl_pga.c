@@ -109,7 +109,7 @@ int openssl_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, in
     loop:
         // check if n0+it passes sieve 
         for(int i=1; i<r; i++){
-            if(((unsigned long) sieve[i] + (*it)) % primes[i]  == 0){
+            if(((unsigned long) sieve[i-1] + (*it)) % primes[i]  == 0){
                 *it = (*it) + 2;
 
                 // if 'it' goes over max deviation value 'l' then retry with another trial n0, remember that l = sieve_sz/2
@@ -147,7 +147,7 @@ returns: 1 if successful, 0 failure, -1 if error
 
 int openssl_generate_sieve(unsigned short **sieve, int sieve_sz, BIGNUM *n0, int r){
     *sieve = NULL;
-    *sieve = (unsigned short*) malloc(sizeof(short)*r); 
+    *sieve = (unsigned short*) malloc(sizeof(short)*(r-1)); 
 
     if(*sieve == NULL){
         return -1;
@@ -158,7 +158,7 @@ int openssl_generate_sieve(unsigned short **sieve, int sieve_sz, BIGNUM *n0, int
         if(mod == (BN_ULONG) -1){
             return 0;
         }
-        (*sieve)[i] = (unsigned short) mod;
+        (*sieve)[i-1] = (unsigned short) mod;
     }
 
     return 1;

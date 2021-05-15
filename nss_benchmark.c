@@ -18,16 +18,17 @@ int main(int argc, char **argv){
 	int l = 700; // max deviation
 
 	int r = atoi(argv[1]);
+	int seq = atoi(argv[2]);
 
 	int l_inc = 512;
 
 	char filename[256];
-	sprintf(filename, "data/nss_benchmark/openssl_sieve/2ndrun_r%d.csv", r);
+	sprintf(filename, "data/nss_benchmark/openssl_sieve/3rdrun_r%d_nr%d.csv", r, seq);
 	FILE *fd;
 	fd = fopen(filename, "w+");
 	fprintf(fd,"r, l, avgruntime\n");
 
-	while(l<=65536){
+	while(l<=32000){
 		char opt_filename[256];
 		sprintf(opt_filename, "data/optimal_params/nss_pga/nss_k1024_r%d_l700_l65536.csv", r);
 		FILE *fd_params = fopen(opt_filename, "r");
@@ -53,13 +54,13 @@ int main(int argc, char **argv){
 
 		start = clock();
 
-		for(int i=0; i<8192; i++){
+		for(int i=0; i<1; i++){
 			int returncode = nss_pga(p, k, t, u, r, l, openssl_generate_sieve, openssl_sieve);
 		}
 
 		end = clock();
 		cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
-		cpu_time_used /= 8192.;
+		cpu_time_used /= 1.;
 
 		fprintf(fd, "%d, %d, %f\n", r, l, cpu_time_used);
 

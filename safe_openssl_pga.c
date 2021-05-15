@@ -121,7 +121,7 @@ int safe_openssl_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n
     loop:
         // check if n0+it passes sieve 
         for(int i=1; i<r; i++){
-            if(((unsigned long) sieve[i] + (*it)) % primes[i]  <= 1){
+            if(((unsigned long) sieve[i-1] + (*it)) % primes[i]  <= 1){
                 *it = (*it) + 4;
 
                 if(*it >= max_deviation){
@@ -163,7 +163,7 @@ int safe_openssl_generate_sieve(unsigned short **sieve, int sieve_sz, BIGNUM *n0
     }
 
     *sieve = NULL;
-    *sieve = (unsigned short*) malloc(sizeof(short)*r); 
+    *sieve = (unsigned short*) malloc(sizeof(short)*(r-1)); 
 
     if(*sieve == NULL){
         return -1;
@@ -174,7 +174,7 @@ int safe_openssl_generate_sieve(unsigned short **sieve, int sieve_sz, BIGNUM *n0
         if(mod == (BN_ULONG) -1){
             return 0;
         }
-        (*sieve)[i] = (unsigned short) mod;
+        (*sieve)[i-1] = (unsigned short) mod;
     }
 
     return 1;

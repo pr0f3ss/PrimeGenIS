@@ -144,6 +144,14 @@ int dirichlet_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, 
             goto free_bn;
         }
 
+        //edge case: If n < 2^(k-1)-a because of the subtraction of the remainder just above, then add mr back
+        if(BN_cmp(n, bn_shift_interval)){
+            if(!BN_add(n, n, n0)){
+                ret = -1;
+                goto free_bn;
+            }
+        }
+
         // postcondition: n is out of interval [2^(k-1) - a, 2^k - (a+1)] AND n is divisible by mr which implies n = z*mr for some z
 
         if(!BN_add(n, n, bn_a)){ // construct n = z*mr + a
