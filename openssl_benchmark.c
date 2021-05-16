@@ -16,11 +16,12 @@ int main(int argc, char **argv){
 	int l = 0; // max deviation
 
 	int r = atoi(argv[1]); // get r from program argument
+	int seq = atoi(argv[2]); // get seq nr from program argument
 
 	int l_inc = 512;
 
 	char filename[256];
-	sprintf(filename, "data/openssl_benchmark/nss_sieve/3rdrun_r%d.csv", r);
+	sprintf(filename, "data/openssl_benchmark/openssl_sieve/4thrun_r%d_nr%d.csv", r, seq);
 	FILE *fd;
 	fd = fopen(filename, "w+");
 	fprintf(fd,"r, l, avgruntime\n");
@@ -43,13 +44,13 @@ int main(int argc, char **argv){
 
 		start = clock();
 
-		for(int i=0; i<10; i++){
+		for(int i=0; i<1; i++){
 			int returncode = openssl_pga(p, k, t, r, l, openssl_generate_sieve, openssl_sieve);
 		}
 
 		end = clock();
 		cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
-		cpu_time_used /= 10.;
+		cpu_time_used /= 1.;
 
 		fprintf(fd, "%d, %d, %f\n", r, l, cpu_time_used);
 
