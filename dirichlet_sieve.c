@@ -145,7 +145,7 @@ int dirichlet_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, 
         }
 
         //edge case: If n < 2^(k-1)-a because of the subtraction of the remainder just above, then add mr back
-        if(BN_cmp(n, bn_shift_interval)){
+        if(BN_cmp(bn_shift_interval, n) == 1){
             if(!BN_add(n, n, n0)){
                 ret = -1;
                 goto free_bn;

@@ -28,7 +28,7 @@ int main(int argc, char **argv){
 	fd = fopen(filename, "w+");
 	fprintf(fd,"r, l, avgruntime\n");
 
-	while(l<=32000){
+	while(l<=48000){
 		char opt_filename[256];
 		sprintf(opt_filename, "data/optimal_params/nss_pga/nss_k1024_r%d_l700_l65536.csv", r);
 		FILE *fd_params = fopen(opt_filename, "r");

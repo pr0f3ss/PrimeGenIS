@@ -181,6 +181,14 @@ int safe_dirichlet_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM 
             goto free_bn;
         }
 
+        //edge case: If n < (2^(k-1)-a)/2 because of the subtraction of the remainder just above, then add mr back
+        if(BN_cmp(bn_shift_interval, n) == 1){
+            if(!BN_add(n, n, n0)){
+                ret = -1;
+                goto free_bn;
+            }
+        }
+
         // postcondition: n is out of interval [(2^(k-1) - a) / 2, (2^k - 1 - a) / 2] AND n is divisible by mr which implies n = u*mr for some u
 
         // we now multiply by 2 to retrieve: n = 2*u*mr = z*mr in [(2^(k-1) - a), (2^k - 1 - a)]
