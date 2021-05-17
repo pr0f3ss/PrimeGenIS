@@ -4,6 +4,7 @@
 #include <openssl/bn.h>
 #include "nat_pga.h"
 #include "openssl_pga.h"
+#include "dirichlet_sieve.h"
 
 
 int main(int argc, char **argv){
@@ -17,11 +18,12 @@ int main(int argc, char **argv){
 	int l = 0; // max deviation
 
 	int r = atoi(argv[1]); // get r from program argument
+	int seq = atoi(argv[2]); // get seq from program argument
 
 	int l_inc = 512;
 
 	char filename[256];
-	sprintf(filename, "data/nat_benchmark/openssl_sieve/2ndrun_r%d.csv", r);
+	sprintf(filename, "data/nat_benchmark/dirichlet_sieve/3rdrun_r%d_nr%d.csv", r, seq);
 	FILE *fd;
 	fd = fopen(filename, "w+");
 	fprintf(fd,"r, l, avgruntime\n");
@@ -46,13 +48,13 @@ int main(int argc, char **argv){
 
 		start = clock();
 
-		for(int i=0; i<8192; i++){
-			int returncode = nat_pga(p, k, t, r, l, openssl_generate_sieve, openssl_sieve);
+		for(int i=0; i<1; i++){
+			int returncode = nat_pga(p, k, t, r, l, dirichlet_generate_sieve, dirichlet_sieve);
 		}
 
 		end = clock();
 		cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
-		cpu_time_used /= 8192.;
+		cpu_time_used /= 1.;
 
 		fprintf(stdout, "Test done for: r=%d, l=%d in %fs\n", r, l, cpu_time_used);
 		fprintf(fd, "%d, %d, %f\n", r, l, cpu_time_used);
