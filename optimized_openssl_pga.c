@@ -61,7 +61,6 @@ int optimized_openssl_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate
     }
 
     /* ========= SIEVE GENERATION SECTION ============= */
-    unsigned short *sieve;
 	int sieve_sz = l/2;
 
     if(!generate_sieve(&sieve, sieve_sz, n0, r)){
