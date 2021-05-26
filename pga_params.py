@@ -30,7 +30,7 @@ def qkts(k=1024, L=1024*np.log(2)*10, t=1, M = -1):
     Cm_sum = []
     for m in range(3,M+1):
         Cm_sum.append(8.0/3.0*(np.pi**2 -6.0)*np.sum([np.power(2, m-j-(k-1.0)/j)for j in range(2,m+1)])*(2**(-t*(m-1))))
-    c = L/(k*np.log(2))
+    c = L/(2*k*np.log(2))
     q = 0.5*(c*k)**2 * np.sum(Cm_sum) + 0.7*c*k*(2**(-t*M))
     return q
 

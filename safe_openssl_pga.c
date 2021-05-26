@@ -118,6 +118,7 @@ returns: 1 if successful, 0 if failure , -1 if error
 int safe_openssl_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int r, unsigned long *it, int k){
     int ret = -1;
     unsigned long max_deviation = 0xffffffffffffffffUL - primes[r-1]; // use max UL - biggest prime as boundary
+    unsigned long entry_it = *it;
     loop:
         // check if n0+it passes sieve 
         for(int i=1; i<r; i++){
@@ -135,7 +136,7 @@ int safe_openssl_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n
     
 
     // n0+it is now a probable prime, copy n0+it into n
-    unsigned long add_value = *it;
+    unsigned long add_value = *it - entry_it;
     ret = 1;
     *it = (*it) + 4; // increment for next run in nat and nss, not needed for openssl (but doesn't hurt as it get reinitialized to 0 after ossl iteration)
 
@@ -146,6 +147,8 @@ int safe_openssl_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n
     if(!BN_copy(n, n0)){
         ret = -1;
     }
+
+    *it = (*it) + 4; // increment for next run in nat and nss, not needed for openssl (but doesn't hurt as it get reinitialized to 0 after ossl iteration)
 
     return ret;
 }
