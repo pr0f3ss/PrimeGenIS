@@ -23,7 +23,7 @@ int main(int argc, char **argv){
 	int l_inc = 512;
 
 	char filename[256];
-	sprintf(filename, "data/nat_benchmark/dirichlet_sieve/3rdrun_r%d_nr%d.csv", r, seq);
+	sprintf(filename, "data/nat_benchmark/openssl_sieve/3rdrun_r%d_nr%d.csv", r, seq);
 	FILE *fd;
 	fd = fopen(filename, "w+");
 	fprintf(fd,"r, l, avgruntime\n");
@@ -49,7 +49,7 @@ int main(int argc, char **argv){
 		start = clock();
 
 		for(int i=0; i<1; i++){
-			int returncode = nat_pga(p, k, t, r, l, dirichlet_generate_sieve, dirichlet_sieve);
+			int returncode = nat_pga(p, k, t, r, l, openssl_generate_sieve, openssl_sieve);
 		}
 
 		end = clock();
