@@ -105,8 +105,11 @@ returns: 1 if successful, 0 if failure , -1 if error
 */
 int openssl_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int r, unsigned long *it, int k){
     int ret = -1;
+
+    BIGNUM *add_bn;
+	add_bn = BN_new();
+
     unsigned long max_deviation = 0xffffffffffffffffUL - primes[r-1]; // use max UL - biggest prime as boundary
-    unsigned long entry_it = *it;
     loop:
         // check if n0+it passes sieve 
         for(int i=1; i<r; i++){
@@ -115,7 +118,8 @@ int openssl_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, in
 
                 // if 'it' goes over max deviation value 'l' then retry with another trial n0, remember that l = sieve_sz/2
                 if(*it >= max_deviation){
-                    return ret;
+                    ret = -1;
+                    goto free_bn;
                 }
 
                 // If sieve[i]+it mod prime[i] == 0, then we conclude that it must be composite, therefore do loop again with updated 'it' variable.
@@ -125,18 +129,24 @@ int openssl_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, in
     
 
     // n0+it is now a probable prime, copy n0+it into n
-    unsigned long add_value = *it - entry_it;
+    unsigned long add_value = *it;
+    *it = (*it) + 2; // increment for next run in nat and nss, not needed for openssl (but doesn't hurt as it get reinitialized to 0 after ossl iteration)
+    
+    if(!BN_set_word(add_bn, add_value)){
+		ret = -1;
+		goto free_bn;
+	}
+
+    if(!BN_add(n, n0, add_bn)){
+        ret = -1;
+        goto free_bn;
+    }
+
     ret = 1;
     
-    if(!BN_add_word(n0, (BN_ULONG) add_value)){
-        ret = -1;
-    }
-
-    if(!BN_copy(n, n0)){
-        ret = -1;
-    }
-
-    *it = (*it) + 2; // increment for next run in nat and nss, not needed for openssl (but doesn't hurt as it get reinitialized to 0 after ossl iteration)
+    free_bn:
+        BN_free(add_bn);
+    
 
     return ret;
 }
