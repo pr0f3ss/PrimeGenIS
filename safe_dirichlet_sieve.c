@@ -5,11 +5,11 @@
 #include "dirichlet_sieve.h"
 
 /*
-function: implements the safe Dirichlet sieve, where if it=0 outputs n = z*mr + a where n in [2^(k-1), 2^k - 1], else outputs n = n+mr (n+n0)
+function: implements the safe Dirichlet sieve, where if it=0 outputs n = z*mr + a where n in [2^(k-1) + 2^(k-2), 2^k - 1], else outputs n = n+mr (n+n0)
 The safe implementation differs in the fact that z must be even. Additionally 'a' must be in [2,mr-1], odd and coprime to mr. (a-1)/2 must be corpime to mr.
 
-n = z*mr+a in [2^(k-1), 2^k -1], z = 2*u
-n = u*mr in [(2^(k-1)-a)/2, (2^k -(a+1))/2] where all interval values are divisible by mr
+n = z*mr+a in [2^(k-1) + 2^(k-2), 2^k -1], z = 2*u
+n = u*mr in [(2^(k-1)+ 2^(k-2) -a)/2, (2^k -(a+1))/2] where all interval values are divisible by mr
 
 We therefore generate a number in the above interval and check for divisibility by mr. If it isn't divisible, shift to the next divisible number by mr.
 As bn_rand_range only generates numbers in [0, x-1], we must apply some transformations to return numbers from our desired interval. 
@@ -114,7 +114,12 @@ int safe_dirichlet_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM 
         //post-cond: 2 <= a < mr and (a-1)/2 is relatively prime to mr, 'a' odd
 
         // set the values
-        if(!BN_set_word(bn_lw, (BN_ULONG) 0)){ // reset bn_lw to 0
+        if(!BN_set_word(bn_lw, (BN_ULONG) 0)){ // reset bn_lw to = 0
+            ret = -1;
+            goto free_bn;
+        }
+
+        if(!BN_set_word(bn_up, (BN_ULONG) 0)){ // = 0
             ret = -1;
             goto free_bn;
         }
@@ -124,17 +129,27 @@ int safe_dirichlet_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM 
             goto free_bn;
         }
 
-        if(!BN_sub(bn_shift_interval, bn_lw, bn_a)){ // = 2^(k-1) - a, note: this number is always odd
+        if(!BN_set_bit(bn_up, (k-2))){ // use bn_up to temporarily hold 2^(k-2)
             ret = -1;
             goto free_bn;
         }
 
-        if(!BN_rshift1(bn_shift_interval, bn_shift_interval)){ // = (2^(k-1) - a)/2
+        if(!BN_add(bn_lw, bn_lw, bn_up)){  // = 2^(k-1) + 2^(k-2)
+            ret = -1;
+            goto free_bn;
+        }
+
+        if(!BN_sub(bn_shift_interval, bn_lw, bn_a)){ // = 2^(k-1) + 2^(k-2) - a, note: this number is always odd
+            ret = -1;
+            goto free_bn;
+        }
+
+        if(!BN_rshift1(bn_shift_interval, bn_shift_interval)){ // = (2^(k-1) + 2^(k-2) - a)/2
             ret = -1;
             goto free_bn;
         } 
 
-        if(!BN_add(bn_lw, bn_lw, bn_one)){  // = 2^(k-1) + 1
+        if(!BN_add(bn_lw, bn_lw, bn_one)){  // = 2^(k-1) + 2^(k-2) + 1
             ret = -1;
             goto free_bn;
         }
@@ -149,24 +164,24 @@ int safe_dirichlet_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM 
             goto free_bn;
         }
 
-        if(!BN_sub(bn_up, bn_up, bn_lw)){ // = 2^k - (2^(k-1) + 1)
+        if(!BN_sub(bn_up, bn_up, bn_lw)){ // = 2^k - (2^(k-1) + 2^(k-2) + 1)
             ret = -1;
             goto free_bn;
         }
 
-        if(!BN_rshift1(bn_up, bn_up)){ // = (2^k - (2^(k-1) + 1)) / 2
+        if(!BN_rshift1(bn_up, bn_up)){ // = (2^k - (2^(k-1) + 2^(k-2) + 1)) / 2
             ret = -1;
             goto free_bn;
         } 
 
-        if(!BN_rand_range(n, bn_up)){ // generate number in [0, (2^k - (2^(k-1) + 1)) / 2]
+        if(!BN_rand_range(n, bn_up)){ // generate number in [0, (2^k - (2^(k-1) + 2^(k-2) + 1)) / 2]
             ret = -1;
             goto free_bn;
         }
 
-        // precondition: n is out of interval [0, (2^k - (2^(k-1) + 1 + a)) / 2]
+        // precondition: n is out of interval [0, (2^k - (2^(k-1) + 2^(k-2) + 1)) / 2]
 
-        if(!BN_add(n, n, bn_shift_interval)){ // shift the interval from [0, (2^k - (2^(k-1) + 1)) / 2] to [(2^(k-1) - a) / 2, (2^k - 1 - a) / 2]
+        if(!BN_add(n, n, bn_shift_interval)){ // shift the interval from [0, (2^k - (2^(k-1) + 2^(k-2) + 1)) / 2] to [(2^(k-1) + 2^(k-2) - a) / 2, (2^k - 1 - a) / 2]
             ret = -1;
             goto free_bn;
         }
@@ -189,9 +204,9 @@ int safe_dirichlet_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM 
             }
         }
 
-        // postcondition: n is out of interval [(2^(k-1) - a) / 2, (2^k - 1 - a) / 2] AND n is divisible by mr which implies n = u*mr for some u
+        // postcondition: n is out of interval [(2^(k-1) + 2^(k-2) - a) / 2, (2^k - 1 - a) / 2] AND n is divisible by mr which implies n = u*mr for some u
 
-        // we now multiply by 2 to retrieve: n = 2*u*mr = z*mr in [(2^(k-1) - a), (2^k - 1 - a)]
+        // we now multiply by 2 to retrieve: n = 2*u*mr = z*mr in [(2^(k-1) + 2^(k-2) - a), (2^k - 1 - a)]
         if(!BN_lshift1(n, n)){
             ret = -1;
             goto free_bn;
