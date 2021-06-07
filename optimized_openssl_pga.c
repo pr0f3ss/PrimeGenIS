@@ -19,7 +19,7 @@ int optimized_openssl_pga(BIGNUM *p, int k, int t, int r, int l){
     sieve = (unsigned short*) malloc(sizeof(short)*(r-1)); 
 
     while(ret==0){ // 0 indicates that no probable prime has been found whereas -1 indicates that some BN function raised an error
-        ret = optimized_openssl_iter(n, k, r, t, l, generate_sieve, sieve_algo, sieve);
+        ret = optimized_openssl_iter(n, k, r, t, l, sieve);
     }
 
     if(ret == 1){

@@ -2,7 +2,7 @@
 #include <openssl/rand.h>
 #include <string.h>
 #include "primes.h"
-#include "safe_nat_pga.h"
+#include "safe_nat_nss_pga.h"
 
 /* 
 function: generates prime with natural algorithm, passed on into bignum p
@@ -44,10 +44,10 @@ int safe_nat_nss_pga(BIGNUM *p, int k, int t, int r, int l){
             ret = -1;
             goto free_bn_sieve;
         }
-
+        
         unsigned long it = 0; // is passed on as an iterator variable inside openssl_sieve to do the sieve checking. 
 
-        ret = sieve_algo(sieve, sieve_sz, n, n0, r, &it, k);
+        ret = safe_nat_nss_sieve(sieve, sieve_sz, n, n0, r, &it, k);
 
         // check for bit length of returned n
         if(BN_num_bits(n) != k){
@@ -59,11 +59,18 @@ int safe_nat_nss_pga(BIGNUM *p, int k, int t, int r, int l){
             goto again;
         }
 
+        if(ret == 1){
+            if(!BN_rshift1(rs, n)){
+                ret = -1;
+                goto free_bn_sieve;
+            }
+        }
+
         // pre-condition: n is odd, k-bit long
         while(!BN_is_prime_fasttest_ex(n, t, ctx, 0, NULL) || !BN_is_prime_fasttest_ex(rs, t, ctx, 0, NULL)){
             
             //int nat_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n0, int r, unsigned long *it)
-            ret = sieve_algo(sieve, sieve_sz, n, n0, r, &it, k);
+            ret = safe_nat_nss_sieve(sieve, sieve_sz, n, n0, r, &it, k);
             
             // check for bit length of returned n
             if(BN_num_bits(n) != k){
@@ -107,12 +114,12 @@ int safe_nat_nss_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n
     BIGNUM *add_bn;
     add_bn = BN_new();
 
-
 	// if we overrun sieve array, we want to update n0 for reinit
 	if(*it >= sieve_sz){
         overrun = 1;
 		goto skip;
-	}	
+	}
+
 	// iterate until next zero entry of sieve
 	unsigned long deref = *it;
 	while(deref < sieve_sz && sieve[deref] != 0){
@@ -126,6 +133,7 @@ int safe_nat_nss_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n, BIGNUM *n
 
     skip:
     if(overrun){
+        (*it) = (*it) + 2;
         unsigned long add_value = 4 * (*it);
 
         if(!BN_set_word(add_bn, add_value)){
@@ -177,7 +185,7 @@ int safe_nat_nss_sieve_init(unsigned short *sieve, int sieve_sz, BIGNUM *n0, int
 	int ret = 0;
 	unsigned long offset;
 
-	memset(sieve, 0, sieve_sz); // init sieve values all to 0
+	memset(sieve, 0, sieve_sz*sizeof(*sieve)); // init sieve values all to 0
 
 	// internal buffer for computations
 	BN_CTX *ctx;
