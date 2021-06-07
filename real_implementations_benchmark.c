@@ -18,7 +18,7 @@ int main(int argc, char **argv){
 	int l_inc = 512;
 
 	char filename[256];
-	sprintf(filename, "data/openssl_benchmark/native_implementation/1strun_r%d.csv", r);
+	sprintf(filename, "data/openssl_benchmark/native_implementation/saferun_r%d.csv", r);
 	FILE *fd;
 	fd = fopen(filename, "w+");
 	fprintf(fd,"r, l, avgruntime\n");
@@ -31,7 +31,7 @@ int main(int argc, char **argv){
 		start = clock();
 
 		for(int i=0; i<8192; i++){
-			int returncode = BN_generate_prime_ex(p, 1024, 0, NULL, NULL, NULL);
+			int returncode = BN_generate_prime_ex(p, 1024, 1, NULL, NULL, NULL);
 		}
 
 		end = clock();

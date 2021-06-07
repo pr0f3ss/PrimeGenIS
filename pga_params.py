@@ -117,5 +117,5 @@ if __name__ == "__main__":
     # t = nat_params(k,64000,r) #boundary: 63,880
     # print("NAT: t={}".format(t))
 
-    U, t = nss_params(k, 8000, 16)
+    U, t = nss_params(k, 38000, 16)
     print("NSS: U={}, t={}".format(U, t))

@@ -9,7 +9,7 @@ function: generates prime with openssl algorithm, passed on into bignum p
 arguments: p = probable prime if successful, k = bit size of prime, t = # MR rounds, r = number of primes to do trial division with, l = max deviation from output prime to trial 
 returns: 1 if successful, 0 if failure, -1 if error
 */
-int optimized_openssl_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(unsigned short*, int, BIGNUM*, int), int (*sieve_algo)(unsigned short*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
+int optimized_openssl_pga(BIGNUM *p, int k, int t, int r, int l){
     int ret = 0;
     
     BIGNUM *n;
@@ -43,7 +43,7 @@ arguments: p = returned prime if successfully generated, k = bit size of prime, 
 returns: 1 if successful, 0 if failure, -1 if error 
 other:  l = max deviation from initially generated num and probable prime 
 */
-int optimized_openssl_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsigned short*, int, BIGNUM*, int), int (*sieve_algo)(unsigned short*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int), unsigned short* sieve){
+int optimized_openssl_iter(BIGNUM *p, int k, int r, int t, int l, unsigned short* sieve){
     int ret = 0;
 
     // create buffer for internal computations
@@ -66,7 +66,7 @@ int optimized_openssl_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate
     /* ========= SIEVE GENERATION SECTION ============= */
 	int sieve_sz = l/2;
 
-    if(!generate_sieve(sieve, sieve_sz, n0, r)){
+    if(!optimized_openssl_generate_sieve(sieve, sieve_sz, n0, r)){
         ret = -1;
         goto free_bn_sieve;
     }
@@ -74,7 +74,7 @@ int optimized_openssl_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate
 
     unsigned long it = 0; // is passed on as an iterator variable inside openssl_sieve to do the sieve checking. 
 
-	ret = sieve_algo(sieve, sieve_sz, n, n0, r, &it, k);
+	ret = optimized_openssl_sieve(sieve, sieve_sz, n, n0, r, &it, k);
     
     // check return value of openssl_sieve & for bit length of returned n
     if(ret != 1 || BN_num_bits(n) != k){
