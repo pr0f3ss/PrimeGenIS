@@ -10,16 +10,19 @@ arguments: p = probable prime if successful, k = bit size of prime, t = # MR rou
 returns: 1 if successful, 0 if failure, -1 if error
 */
 
-int nss_pga(BIGNUM *p, int k, int t, int u, int r, int l, int (*generate_sieve)(unsigned short**, int, BIGNUM*, int), int (*sieve_algo)(unsigned short*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){	
+int nss_pga(BIGNUM *p, int k, int t, int u, int r, int l, int (*generate_sieve)(unsigned short*, int, BIGNUM*, int), int (*sieve_algo)(unsigned short*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int), int sieve_sz){	
 	BIGNUM *n;
 	n = BN_new();
 
 	int ret = -1; // return code of nss_iter
 	int j = 0; // iteration var
 
+	unsigned short *sieve = NULL;
+    sieve = (unsigned short*) malloc(sizeof(short)*(sieve_sz)); 
+
 	// tries at most u nss_iter steps
 	while(ret != 1 && j < u){
-		ret = nss_iter(n, k, r, t, l, generate_sieve, sieve_algo);
+		ret = nss_iter(n, k, r, t, l, generate_sieve, sieve_algo, sieve);
 		j+=1;
 	}
 
@@ -30,6 +33,7 @@ int nss_pga(BIGNUM *p, int k, int t, int u, int r, int l, int (*generate_sieve)(
 	}
 
 	BN_free(n);
+	free(sieve);
 
 	return ret;
 }
@@ -42,7 +46,7 @@ returns: 1 if successful, 0 if failure, -1 if error (sieve generation)
 other:  l = max deviation from initially generated num and probable prime 
 */
 
-int nss_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsigned short**, int, BIGNUM*, int), int (*sieve_algo)(unsigned short*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
+int nss_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsigned short*, int, BIGNUM*, int), int (*sieve_algo)(unsigned short*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int), unsigned short* sieve){
 	int ret = 0; // return code of nss_iter
 
 	// create buffer for internal computations
@@ -71,21 +75,19 @@ int nss_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsign
 	}
 
 	/* ========= SIEVE GENERATION SECTION ============= */
-
-	unsigned short *sieve;
 	int sieve_sz = l/2;
 
 	// generate sieve for nss_sieve method
-	if(!generate_sieve(&sieve, sieve_sz, n0, r)){
+	if(!generate_sieve(sieve, sieve_sz, n0, r)){
 		ret = -1;
-		goto free_bn_sieve;
+		goto free_bn;
 	}
 
 	/* ========= END SIEVE GENERATION SECTION ============= */
 
 	if(!BN_set_word(bn_l, l)){
 		ret = -1;
-		goto free_bn_sieve;
+		goto free_bn;
 	}
 
 	unsigned long it = 0; // is passed on as an iterator variable inside nss_sieve to do the sieve checking. 
@@ -98,7 +100,7 @@ int nss_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsign
 
 		if(ret != 1 || !BN_cmp(rem, bn_l) || BN_num_bits(n) != k){
 			ret = 0;
-			goto free_bn_sieve;
+			goto free_bn;
 		}
 
 	}while(!BN_is_prime_fasttest_ex(n, t, ctx, 0, NULL)); // signature: int BN_is_prime_fasttest_ex(const BIGNUM *p, int nchecks, BN_CTX *ctx, int do_trial_division, BN_GENCB *cb);
@@ -108,9 +110,7 @@ int nss_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsign
 	if(!BN_copy(p, n)){ // copy value from n to p on successful prime generation
 		ret = -1;
 	} 
-
-	free_bn_sieve:
-			free(sieve);
+		
 	free_bn:
 		BN_free(n);
 		BN_free(n0);
@@ -183,19 +183,11 @@ arguments: sieve = passed on datastructure holding the sieve values, sieve_sz = 
 returns: 1 if successful, 0 if error 
 */
 
-int nss_generate_sieve(unsigned short **sieve, int sieve_sz, BIGNUM *n0, int r){
+int nss_generate_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n0, int r){
 	int ret = 0;
 	unsigned long offset;
 
-	// initialize sieve
-	*sieve = NULL;
-    *sieve = (unsigned short*) malloc(sizeof(short)*sieve_sz); 
-
-    if(*sieve == NULL){
-        return -1;
-    } 
-
-	memset(*sieve, 0, sieve_sz); // init sieve values all to 0
+	memset(*sieve, 0, sizeof(short)*sieve_sz); // init sieve values all to 0
 
 	// internal buffer for computations
 	BN_CTX *ctx;
@@ -231,7 +223,7 @@ int nss_generate_sieve(unsigned short **sieve, int sieve_sz, BIGNUM *n0, int r){
 
 		for(int idx = offset; idx < 2 * sieve_sz; idx += current_prime){
 			if( idx % 2 == 0){
-				(*sieve)[idx/2] = 1;
+				sieve[idx/2] = 1;
 			}
 		}
 	}

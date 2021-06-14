@@ -2,7 +2,7 @@
 #include <openssl/rand.h>
 #include <string.h>
 #include "primes.h"
-#include "dirichlet_sieve.h"
+#include "safe_dirichlet_sieve.h"
 
 /*
 function: implements the safe Dirichlet sieve, where if it=0 outputs n = z*mr + a where n in [2^(k-1) + 2^(k-2), 2^k - 1], else outputs n = n+mr (n+n0)
@@ -248,16 +248,8 @@ function: calculates mr for usage in the dirichlet sieve
 arguments: sieve = not used, sieve_sz = not used, n0 = mr if successful, r = number of primes to do trial division with 
 returns: 1 if successful, 0 if failure, -1 if error 
 */
-int safe_dirichlet_generate_sieve(unsigned short **sieve, int sieve_sz, BIGNUM *n0, int r){
+int safe_dirichlet_generate_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n0, int r){
     int ret = 0;
-    
-    // allocate 1 byte s.t. we can free in any pga without issues
-    *sieve = NULL;
-    *sieve = (unsigned short*) malloc(sizeof(short)*1); 
-
-    if(*sieve == NULL){
-        return -1;
-    } 
 
     // create buffer for internal computations
 	BN_CTX *ctx;

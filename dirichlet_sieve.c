@@ -204,16 +204,8 @@ function: calculates mr for usage in the dirichlet sieve
 arguments: sieve = not used, sieve_sz = not used, n0 = mr if successful, r = number of primes to do trial division with 
 returns: 1 if successful, 0 if failure, -1 if error 
 */
-int dirichlet_generate_sieve(unsigned short **sieve, int sieve_sz, BIGNUM *n0, int r){
+int dirichlet_generate_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n0, int r){
     int ret = 0;
-    
-    // allocate 1 byte s.t. we can free in any pga without issues
-    *sieve = NULL;
-    *sieve = (unsigned short*) malloc(sizeof(short)*1); 
-
-    if(*sieve == NULL){
-        return -1;
-    } 
 
     // create buffer for internal computations
 	BN_CTX *ctx;

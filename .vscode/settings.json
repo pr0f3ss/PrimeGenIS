@@ -1,3 +1,9 @@
 {
-    "git.ignoreLimitWarning": true
+    "git.ignoreLimitWarning": true,
+    "files.associations": {
+        "generate_prime.h": "c",
+        "safe_openssl_pga.h": "c",
+        "safe_nss_pga.h": "c",
+        "safe_nat_pga.h": "c"
+    }
 }

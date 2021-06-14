@@ -9,15 +9,18 @@ function: generates safe prime with openssl algorithm, passed on into bignum p
 arguments: p = probable prime if successful, k = bit size of prime, t = # MR rounds, r = number of primes to do trial division with, l = max deviation from output prime to trial 
 returns: 1 if successful, 0 if failure, -1 if error
 */
-int safe_openssl_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(unsigned short**, int, BIGNUM*, int), int (*sieve_algo)(unsigned short*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
+int safe_openssl_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(unsigned short*, int, BIGNUM*, int), int (*sieve_algo)(unsigned short*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int), int sieve_sz){
     
     int ret = 0;
     
     BIGNUM *n;
 	n = BN_new();
 
+    unsigned short *sieve = NULL;
+    sieve = (unsigned short*) malloc(sizeof(short)*(sieve_sz)); 
+
     while(ret==0){ // 0 indicates that no probable safe prime has been found whereas -1 indicates that some BN function raised an error
-        ret = safe_openssl_iter(n, k, r, t, l, generate_sieve, sieve_algo);
+        ret = safe_openssl_iter(n, k, r, t, l, generate_sieve, sieve_algo, sieve);
     }
 
     if(ret == 1){
@@ -27,6 +30,7 @@ int safe_openssl_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve
 	}
 
     BN_free(n);
+    free(sieve);
 
     return ret;
 
@@ -38,7 +42,7 @@ arguments: p = returned prime if successfully generated, k = bit size of prime, 
 returns: 1 if successful, 0 if failure, -1 if error 
 other:  l = max deviation from initially generated num and probable prime 
 */
-int safe_openssl_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsigned short**, int, BIGNUM*, int), int (*sieve_algo)(unsigned short*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int)){
+int safe_openssl_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(unsigned short*, int, BIGNUM*, int), int (*sieve_algo)(unsigned short*, int, BIGNUM*, BIGNUM*, int, unsigned long*, int), unsigned short* sieve){
     int ret = 0;
 
     // create buffer for internal computations
@@ -63,12 +67,11 @@ int safe_openssl_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_siev
     }
 
     /* ========= SIEVE GENERATION SECTION ============= */
-    unsigned short *sieve;
 	int sieve_sz = l/2;
 
-    if(!generate_sieve(&sieve, sieve_sz, n0, r)){
+    if(!generate_sieve(sieve, sieve_sz, n0, r)){
         ret = -1;
-        goto free_bn_sieve;
+        goto free_bn;
     }
     /* ========= END SIEVE GENERATION SECTION ============= */
 
@@ -79,13 +82,13 @@ int safe_openssl_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_siev
     // check return value of openssl_sieve & for bit length of returned n
     if(ret != 1 || BN_num_bits(n) != k){
         ret = 0;
-        goto free_bn_sieve;
+        goto free_bn;
     }
 
     // get rs = n>>1 to check safe prime generation (rs = (n-1)/2, -1 omitted as all primes >2 are odd)
     if(!BN_rshift1(rs, n)){
         ret = -1;
-        goto free_bn_sieve;
+        goto free_bn;
     }
 
     if(BN_is_prime_fasttest_ex(n, t, ctx, 0, NULL) && BN_is_prime_fasttest_ex(rs, t, ctx, 0, NULL)){
@@ -96,8 +99,6 @@ int safe_openssl_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_siev
         ret = 0; // set ret = 0 if didn't pass MR test
     }
 
-    free_bn_sieve:
-        free(sieve);
     free_bn:
         BN_free(n0);
         BN_free(n);
@@ -168,16 +169,9 @@ arguments: sieve = passed on datastructure holding the sieve values, sieve_sz = 
 returns: 1 if successful, 0 failure, -1 if error 
 */
 
-int safe_openssl_generate_sieve(unsigned short **sieve, int sieve_sz, BIGNUM *n0, int r){
+int safe_openssl_generate_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n0, int r){
     // set bit at position 1 is set to 1, as else (n0+it)/2 will be even (so not safe prime)
     if(!BN_set_bit(n0, 1)){
-        return -1;
-    }
-
-    *sieve = NULL;
-    *sieve = (unsigned short*) malloc(sizeof(short)*(r-1)); 
-
-    if(*sieve == NULL){
         return -1;
     }
 
@@ -186,7 +180,7 @@ int safe_openssl_generate_sieve(unsigned short **sieve, int sieve_sz, BIGNUM *n0
         if(mod == (BN_ULONG) -1){
             return 0;
         }
-        (*sieve)[i-1] = (unsigned short) mod;
+        sieve[i-1] = (unsigned short) mod;
     }
 
     return 1;
