@@ -32,7 +32,6 @@ int safe_nat_pga(BIGNUM *p, int k, int t, int r, int l, int (*generate_sieve)(un
 
     unsigned short *sieve = NULL;
     sieve = (unsigned short*) malloc(sizeof(short)*(sieve_sz)); 
-    int sieve_sz = l/2;
 
     if(!BN_rand(n0, k, BN_RAND_TOP_TWO, BN_RAND_BOTTOM_ODD)){
 		ret = -1;

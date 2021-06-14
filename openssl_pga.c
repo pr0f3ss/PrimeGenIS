@@ -62,10 +62,11 @@ int openssl_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(un
     }
 
     /* ========= SIEVE GENERATION SECTION ============= */
+    int sieve_sz = l/2;
 
     if(!generate_sieve(sieve, sieve_sz, n0, r)){
         ret = -1;
-        goto free_bn_sieve;
+        goto free_bn;
     }
     /* ========= END SIEVE GENERATION SECTION ============= */
 
@@ -76,7 +77,7 @@ int openssl_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(un
     // check return value of openssl_sieve & for bit length of returned n
     if(ret != 1 || BN_num_bits(n) != k){
         ret = 0;
-        goto free_bn_sieve;
+        goto free_bn;
     }
 
     if(BN_is_prime_fasttest_ex(n, t, ctx, 0, NULL)){

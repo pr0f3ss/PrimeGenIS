@@ -187,7 +187,7 @@ int nss_generate_sieve(unsigned short *sieve, int sieve_sz, BIGNUM *n0, int r){
 	int ret = 0;
 	unsigned long offset;
 
-	memset(*sieve, 0, sizeof(short)*sieve_sz); // init sieve values all to 0
+	memset(sieve, 0, sizeof(short)*sieve_sz); // init sieve values all to 0
 
 	// internal buffer for computations
 	BN_CTX *ctx;
