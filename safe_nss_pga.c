@@ -104,7 +104,7 @@ int safe_nss_iter(BIGNUM *p, int k, int r, int t, int l, int (*generate_sieve)(u
 		
 		BN_sub(rem, n, n0);
 
-		if(ret != 1 || !BN_cmp(rem, bn_l) || BN_num_bits(n) != k){
+		if(ret != 1 || BN_cmp(rem, bn_l)==1 || BN_num_bits(n) != k){
 			ret = 0;
 			goto free_bn;
 		}

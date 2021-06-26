@@ -2,5 +2,5 @@ gcc -std=gnu99 -I/usr/compilelibs/openssl/include -L/usr/compilelibs/openssl/lib
 
 
 
-gcc -std=gnu99 -I/cluster/home/dofilip/openssl/include -L/cluster/home/dofilip/openssl/lib -Wl,-rpath=/cluster/home/dofilip/openssl/lib openssl_benchmark.c optimized_openssl_pga.c -lcrypto -o opt_ossl_exec -O3
+gcc -std=gnu99 -I/cluster/home/dofilip/openssl/include -L/cluster/home/dofilip/openssl/lib -Wl,-rpath=/cluster/home/dofilip/openssl/lib openssl_benchmark.c safe_openssl_pga.c safe_dirichlet_sieve.c -lcrypto -o safe_ossl_dir_exec -O3
 
