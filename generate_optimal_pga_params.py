@@ -94,7 +94,7 @@ if __name__ == "__main__":
 	# filepath = "data/optimal_params/nat_pga/"
 	# filename = filepath+"nat_dir_k1024_r8_r100.csv"
 	# r=8
-	# l=64000
+	# l=128000
 	# with open(filename, 'w', newline='') as file:
 	#     writer = csv.writer(file)
 	#     writer.writerow(["r", "t"])
