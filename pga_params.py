@@ -70,13 +70,15 @@ def ossl_params(k, l, r):
     t_list = [i for i in range(1,20)]
     L_list = [l]
 
-    primesum = 0
+    primeprod = 1
     primes = sorted(list(historic(r)))
     for prime in primes:
-        primesum += 1 + (1/(prime-1))
-    primesum = 2 * primesum
+        primeprod *= 1 + (1/(prime-1))
+    primeprod = 2 * primeprod
+
+    #print(math.log(2)/2 * ((SECURITY_PARAM+1)+math.log2((k*math.log(2))/primeprod)))
         
-    pga_spec = -math.log2((k*math.log(2)/primesum))
+    pga_spec = -math.log2((k*math.log(2)/primeprod))
     t, l = retrieve_optimal_params(k, t_list, L_list, pga_spec)
     return t
 
@@ -102,8 +104,8 @@ def nat_params(k, l, r):
 if __name__ == "__main__":
     # test
     k = 1024
-    l = 4000
-    r = 1024
+    l = 65000
+    r = 16
 
     # test nss
     # U, t = nss_params(k,l,r)
@@ -114,8 +116,10 @@ if __name__ == "__main__":
     # print("OSSL: t={}".format(t))
 
     # # test nat
-    # t = nat_params(k,64000,r) #boundary: 63,880
-    # print("NAT: t={}".format(t))
+    t = nat_params(k,128000,r) #boundary: 63,880
+    print("NAT: t={}".format(t))
 
-    U, t = nss_params(k, 38000, 16)
-    print("NSS: U={}, t={}".format(U, t))
+    # U, t = nss_params(k, 38000, 16)
+    # print("NSS: U={}, t={}".format(U, t))
+
+  
